@@ -1,4 +1,4 @@
-# i3x-via-mqtt
+# mqtt-to-i3x
 
 A protocol bridge that transforms raw MQTT messages into i3x-compliant REST API endpoints with real-time subscriptions and at-least-once delivery guarantees.
 
