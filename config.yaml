@@ -1,0 +1,122 @@
+# i3x-via-mqtt Configuration File
+# This file configures the MQTT-to-i3x bridge
+
+# =============================================================================
+# Server Configuration
+# =============================================================================
+server:
+  port: 3000
+  host: "0.0.0.0"
+  tls:
+    key: "test.key"
+    cert: "test.crt"
+  # Uncomment for HTTPS:
+  # tls:
+  #   key: "/path/to/server.key"
+  #   cert: "/path/to/server.crt"
+  #   ca: "/path/to/ca.crt"  # Optional
+
+# =============================================================================
+# Authentication
+# =============================================================================
+auth:
+  apiKeys:
+    - "bearer-token-1"  # Change this in production!
+
+# =============================================================================
+# MQTT Broker Connection
+# =============================================================================
+mqtt:
+  brokerUrl: "mqtt://virtualfactory.proveit.services:1883"
+  username: "proveitreadonly"
+  password: "proveitreadonlypassword"
+  clientId: "i3x-server"  # Will be suffixed with timestamp
+  clean: true
+  keepalive: 60
+  reconnectPeriod: 5000
+  protocolVersion: 5
+
+# =============================================================================
+# Namespaces
+# Dynamically created from MQTT topic structure. Seed with a default.
+# =============================================================================
+namespaces:
+  - uri: "urn:mqtt:default"
+    displayName: "Default MQTT Namespace"
+
+# =============================================================================
+# Object Types
+# Generic types - specific types are auto-created from topic structure
+# =============================================================================
+objectTypes:
+  - elementId: "MqttTopic"
+    displayName: "MQTT Topic"
+    namespaceUri: "urn:mqtt:default"
+    schema:
+      type: "object"
+
+# =============================================================================
+# Mapping Rules
+# Generic rules that capture ANY MQTT topic structure
+# Rules are evaluated in order - first match wins
+# =============================================================================
+mappings:
+  # ---------------------------------------------------------------------------
+  # 5-level topics: {a}/{b}/{c}/{d}/{e}
+  # Example: factory/building1/floor2/line3/sensor1
+  # ---------------------------------------------------------------------------
+  - id: "five-level"
+    topicPattern: "{level1}/{level2}/{level3}/{level4}/{level5}"
+    codec: "json"
+    namespaceUri: "urn:mqtt:{level1}"
+    objectTypeId: "{level2}"
+    elementIdTemplate: "{level1}.{level2}.{level3}.{level4}.{level5}"
+    displayNameTemplate: "{level5}"
+
+  # ---------------------------------------------------------------------------
+  # 4-level topics: {a}/{b}/{c}/{d}
+  # Example: enterprise/system/subsystem/tag
+  # ---------------------------------------------------------------------------
+  - id: "four-level"
+    topicPattern: "{level1}/{level2}/{level3}/{level4}"
+    codec: "json"
+    namespaceUri: "urn:mqtt:{level1}"
+    objectTypeId: "{level2}"
+    elementIdTemplate: "{level1}.{level2}.{level3}.{level4}"
+    displayNameTemplate: "{level4}"
+
+  # ---------------------------------------------------------------------------
+  # 3-level topics: {a}/{b}/{c}
+  # Example: enterprise/system/tag
+  # ---------------------------------------------------------------------------
+  - id: "three-level"
+    topicPattern: "{level1}/{level2}/{level3}"
+    codec: "json"
+    namespaceUri: "urn:mqtt:{level1}"
+    objectTypeId: "{level2}"
+    elementIdTemplate: "{level1}.{level2}.{level3}"
+    displayNameTemplate: "{level3}"
+
+  # ---------------------------------------------------------------------------
+  # 2-level topics: {a}/{b}
+  # Example: device/measurement
+  # ---------------------------------------------------------------------------
+  - id: "two-level"
+    topicPattern: "{level1}/{level2}"
+    codec: "json"
+    namespaceUri: "urn:mqtt:{level1}"
+    objectTypeId: "MqttTopic"
+    elementIdTemplate: "{level1}.{level2}"
+    displayNameTemplate: "{level2}"
+
+  # ---------------------------------------------------------------------------
+  # 1-level topics: {a}
+  # Example: sensor-data
+  # ---------------------------------------------------------------------------
+  - id: "one-level"
+    topicPattern: "{topic}"
+    codec: "json"
+    namespaceUri: "urn:mqtt:default"
+    objectTypeId: "MqttTopic"
+    elementIdTemplate: "{topic}"
+    displayNameTemplate: "{topic}"

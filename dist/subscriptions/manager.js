@@ -1,0 +1,126 @@
+import { randomUUID } from 'crypto';
+const DEFAULT_QUEUE_HIGH_WATER_MARK = 10000;
+const DEFAULT_MAX_DEPTH = 0;
+export class SubscriptionManager {
+    subscriptions = new Map();
+    sseConnections = new Map();
+    create(options = {}) {
+        const subscriptionId = randomUUID();
+        const subscription = {
+            subscriptionId,
+            createdAt: new Date().toISOString(),
+            monitoredItems: new Set(options.monitoredItems ?? []),
+            maxDepth: options.maxDepth ?? DEFAULT_MAX_DEPTH,
+            pendingQueue: [],
+            queueHighWaterMark: options.queueHighWaterMark ?? DEFAULT_QUEUE_HIGH_WATER_MARK,
+        };
+        this.subscriptions.set(subscriptionId, subscription);
+        return subscription;
+    }
+    get(subscriptionId) {
+        return this.subscriptions.get(subscriptionId);
+    }
+    getAll() {
+        return Array.from(this.subscriptions.values());
+    }
+    delete(subscriptionId) {
+        const sse = this.sseConnections.get(subscriptionId);
+        if (sse) {
+            try {
+                sse.raw.end();
+            }
+            catch {
+                // Ignore close errors
+            }
+            this.sseConnections.delete(subscriptionId);
+        }
+        return this.subscriptions.delete(subscriptionId);
+    }
+    register(subscriptionId, elementIds) {
+        const sub = this.subscriptions.get(subscriptionId);
+        if (!sub)
+            return false;
+        for (const id of elementIds) {
+            sub.monitoredItems.add(id);
+        }
+        return true;
+    }
+    unregister(subscriptionId, elementIds) {
+        const sub = this.subscriptions.get(subscriptionId);
+        if (!sub)
+            return false;
+        for (const id of elementIds) {
+            sub.monitoredItems.delete(id);
+        }
+        return true;
+    }
+    notifyChange(elementId, value) {
+        for (const [id, sub] of this.subscriptions) {
+            if (sub.monitoredItems.has(elementId)) {
+                // Enforce queue high water mark - drop oldest if exceeded
+                if (sub.pendingQueue.length >= sub.queueHighWaterMark) {
+                    sub.pendingQueue.shift();
+                }
+                sub.pendingQueue.push(value);
+                // Push to SSE if connected (best-effort real-time)
+                const sse = this.sseConnections.get(id);
+                if (sse) {
+                    try {
+                        sse.raw.write(`data: ${JSON.stringify(value)}\n\n`);
+                    }
+                    catch {
+                        // Connection may have closed
+                        this.sseConnections.delete(id);
+                    }
+                }
+            }
+        }
+    }
+    sync(subscriptionId) {
+        const sub = this.subscriptions.get(subscriptionId);
+        if (!sub)
+            return undefined;
+        // Drain and return the queue (at-least-once delivery)
+        const pending = sub.pendingQueue.splice(0);
+        return pending;
+    }
+    attachSse(subscriptionId, reply) {
+        const sub = this.subscriptions.get(subscriptionId);
+        if (!sub)
+            return false;
+        // Close existing connection if any
+        const existing = this.sseConnections.get(subscriptionId);
+        if (existing) {
+            try {
+                existing.raw.end();
+            }
+            catch {
+                // Ignore
+            }
+        }
+        this.sseConnections.set(subscriptionId, reply);
+        return true;
+    }
+    detachSse(subscriptionId) {
+        this.sseConnections.delete(subscriptionId);
+    }
+    hasSseConnection(subscriptionId) {
+        return this.sseConnections.has(subscriptionId);
+    }
+    toInfo(sub) {
+        return {
+            subscriptionId: sub.subscriptionId,
+            createdAt: sub.createdAt,
+            monitoredItems: Array.from(sub.monitoredItems),
+            maxDepth: sub.maxDepth,
+            pendingCount: sub.pendingQueue.length,
+        };
+    }
+    stats() {
+        return {
+            subscriptions: this.subscriptions.size,
+            sseConnections: this.sseConnections.size,
+        };
+    }
+}
+export const subscriptionManager = new SubscriptionManager();

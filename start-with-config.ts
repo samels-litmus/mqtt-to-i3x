@@ -1,0 +1,200 @@
+/**
+ * i3x-via-mqtt Server Startup (Configuration File Mode)
+ * Loads configuration from YAML file and starts the server
+ *
+ * Usage:
+ *   npx tsx start-with-config.ts [config-file]
+ *
+ * Examples:
+ *   npx tsx start-with-config.ts              # Uses ./config.yaml
+ *   npx tsx start-with-config.ts my-config.yaml
+ */
+
+import { createMqttClient, createMessageHandler, attachHandler } from './src/mqtt/index.js';
+import { MappingEngine } from './src/mapping/engine.js';
+import { SchemaMapper } from './src/mapping/schema-mapper.js';
+import { ObjectStore } from './src/store/object-store.js';
+import { codecRegistry } from './src/codecs/registry.js';
+import { registerBuiltinCodecs } from './src/codecs/builtin.js';
+import { loadConfig, AppConfig } from './src/config/loader.js';
+import { createServer } from './src/api/server.js';
+import { SubscriptionManager } from './src/subscriptions/manager.js';
+
+function printUsage() {
+  console.log(`
+Usage: npx tsx start-with-config.ts [config-file]
+
+Arguments:
+  config-file   Path to YAML configuration file (default: ./config.yaml)
+
+Examples:
+  npx tsx start-with-config.ts
+  npx tsx start-with-config.ts ./my-config.yaml
+  npx tsx start-with-config.ts /etc/i3x/production.yaml
+`);
+}
+
+async function main() {
+  // Parse command line arguments
+  const args = process.argv.slice(2);
+
+  if (args.includes('--help') || args.includes('-h')) {
+    printUsage();
+    process.exit(0);
+  }
+
+  const configPath = args[0] || './config.yaml';
+
+  console.log('='.repeat(60));
+  console.log('i3x-via-mqtt Server');
+  console.log('='.repeat(60));
+  console.log();
+
+  // 1. Load configuration
+  console.log('[1/7] Loading configuration...');
+  console.log(`  File: ${configPath}`);
+
+  let config: AppConfig;
+  try {
+    config = loadConfig(configPath);
+    console.log('  Configuration loaded successfully');
+  } catch (err) {
+    console.error(`  ERROR: Failed to load configuration: ${err}`);
+    console.error('  Make sure the config file exists and is valid YAML');
+    process.exit(1);
+  }
+
+  // 2. Register built-in codecs
+  console.log('[2/7] Registering codecs...');
+  registerBuiltinCodecs();
+  console.log(`  Built-in codecs: ${codecRegistry.list().join(', ')}`);
+
+  // 3. Set up mapping engine
+  console.log('[3/7] Setting up mapping engine...');
+  const mappingEngine = new MappingEngine();
+  mappingEngine.addRules(config.mappings);
+  console.log(`  Rules loaded: ${config.mappings.length}`);
+  for (const rule of config.mappings) {
+    console.log(`    - ${rule.id}: ${rule.topicPattern}`);
+  }
+
+  // 4. Initialize stores
+  console.log('[4/7] Initializing stores...');
+  const objectStore = new ObjectStore();
+  const subscriptionManager = new SubscriptionManager();
+  const schemaMapper = new SchemaMapper();
+
+  // Wire up subscription notifications
+  objectStore.addChangeListener((elementId, value) => {
+    subscriptionManager.notifyChange(elementId, value);
+  });
+
+  // Register namespaces from config
+  for (const ns of config.namespaces) {
+    objectStore.registerNamespace(ns);
+    console.log(`  Namespace: ${ns.uri} (${ns.displayName})`);
+  }
+
+  // Register object types from config
+  for (const objType of config.objectTypes) {
+    objectStore.registerType({
+      elementId: objType.elementId,
+      displayName: objType.displayName,
+      namespaceUri: objType.namespaceUri,
+      schema: objType.schema,
+    });
+    console.log(`  ObjectType: ${objType.elementId}`);
+  }
+
+  console.log('  ObjectStore and SubscriptionManager ready');
+
+  // 5. Connect to MQTT
+  console.log('[5/7] Connecting to MQTT broker...');
+  console.log(`  Broker: ${config.mqtt.brokerUrl}`);
+  if (config.mqtt.username) {
+    console.log(`  Username: ${config.mqtt.username}`);
+  }
+
+  const mqttConfig = {
+    ...config.mqtt,
+    clientId: `${config.mqtt.clientId || 'i3x-server'}-${Date.now()}`,
+  };
+
+  const mqttClient = createMqttClient(mqttConfig);
+  const handler = createMessageHandler({
+    mappingEngine,
+    schemaMapper,
+    objectStore,
+  });
+  attachHandler(mqttClient, handler);
+
+  try {
+    await mqttClient.connect();
+    console.log('  Connected!');
+  } catch (err) {
+    console.error(`  Connection failed: ${err}`);
+    process.exit(1);
+  }
+
+  // 6. Subscribe to topics based on mapping rules
+  console.log('[6/7] Subscribing to topics...');
+
+  // Subscribe to all topics to capture everything
+  mqttClient.subscribe('#');
+  console.log('  Subscribed to # (all topics)');
+
+  // 7. Start API server
+  console.log('[7/7] Starting API server...');
+  const server = await createServer(
+    config.server,
+    config.auth,
+    objectStore,
+    subscriptionManager,
+    mappingEngine,
+    mqttClient
+  );
+
+  await server.listen({ port: config.server.port, host: config.server.host });
+  const protocol = config.server.tls ? 'https' : 'http';
+  console.log();
+  console.log('='.repeat(60));
+  console.log(`Server running at ${protocol}://${config.server.host}:${config.server.port}`);
+  console.log(`API Keys: ${config.auth.apiKeys.length} configured`);
+  console.log('='.repeat(60));
+  console.log();
+  console.log('Endpoints:');
+  console.log('  GET  /namespaces');
+  console.log('  GET  /objecttypes');
+  console.log('  GET  /objects');
+  console.log('  POST /objects/value');
+  console.log('  POST /subscriptions');
+  console.log('  GET  /subscriptions/{id}/stream  (SSE)');
+  console.log('  POST /subscriptions/{id}/sync');
+  console.log('  GET  /admin/mappings');
+  console.log('  POST /admin/mappings');
+  console.log('  GET  /admin/objecttypes');
+  console.log('  POST /admin/objecttypes');
+  console.log();
+  console.log('Press Ctrl+C to stop');
+
+  // Log stats periodically
+  setInterval(() => {
+    const stats = handler.getStats();
+    const storeStats = objectStore.stats();
+    console.log(`[Stats] MQTT: ${stats.received} recv, ${stats.processed} proc | Store: ${storeStats.values} values, ${storeStats.instances} instances`);
+  }, 10000);
+
+  // Handle shutdown
+  process.on('SIGINT', async () => {
+    console.log('\nShutting down...');
+    await mqttClient.disconnect();
+    await server.close();
+    console.log('Goodbye!');
+    process.exit(0);
+  });
+}
+
+main().catch((err) => {
+  console.error('Fatal error:', err);
+  process.exit(1);
+});
