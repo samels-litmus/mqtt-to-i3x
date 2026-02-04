@@ -8,11 +8,9 @@ export async function registerNamespacesRoutes(
     const store = request.apiContext.store;
     const namespaces = store.getAllNamespaces();
 
-    return {
-      namespaces: namespaces.map((ns) => ({
-        uri: ns.uri,
-        displayName: ns.displayName,
-      })),
-    };
+    return namespaces.map((ns) => ({
+      uri: ns.uri,
+      displayName: ns.displayName,
+    }));
   });
 }

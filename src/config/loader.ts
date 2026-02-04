@@ -58,7 +58,10 @@ export interface AppConfig {
       ca?: string;   // Optional CA cert path
     };
   };
-  auth: { apiKeys: string[] };
+  auth: {
+    enabled?: boolean;  // Defaults to true if apiKeys are provided
+    apiKeys: string[];
+  };
   mqtt: MqttConfig;
   namespaces: NamespaceConfig[];
   objectTypes: ObjectTypeConfig[];

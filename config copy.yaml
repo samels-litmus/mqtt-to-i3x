@@ -39,6 +39,14 @@ mqtt:
 
 # =============================================================================
 # Namespaces
+# Dynamically created from MQTT topic structure. Seed with a default.
+# =============================================================================
+namespaces:
+  - uri: "urn:mqtt:default"
+    displayName: "Default MQTT Namespace"
+
+# =============================================================================
+# Namespaces
 # Define the i3x namespaces for organizing objects
 # =============================================================================
 namespaces:

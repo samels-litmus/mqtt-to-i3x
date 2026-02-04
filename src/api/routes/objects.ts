@@ -10,9 +10,9 @@ interface ObjectsListBody {
 }
 
 interface ObjectsRelatedBody {
-  elementId: string;
-  relationshipTypeId?: string;
-  maxDepth?: number;
+  elementIds: string[];
+  relationshiptype?: string | null;
+  includeMetadata?: boolean;
 }
 
 export async function registerObjectsRoutes(
@@ -34,16 +34,14 @@ export async function registerObjectsRoutes(
         instances = store.getAllInstances();
       }
 
-      return {
-        objects: instances.map((inst) => ({
-          elementId: inst.elementId,
-          displayName: inst.displayName,
-          typeId: inst.typeId,
-          parentId: inst.parentId,
-          isComposition: inst.isComposition,
-          namespaceUri: inst.namespaceUri,
-        })),
-      };
+      return instances.map((inst) => ({
+        elementId: inst.elementId,
+        displayName: inst.displayName,
+        typeId: inst.typeId,
+        parentId: inst.parentId,
+        isComposition: inst.isComposition,
+        namespaceUri: inst.namespaceUri,
+      }));
     }
   );
 
@@ -59,16 +57,14 @@ export async function registerObjectsRoutes(
 
       const instances = store.getInstances(elementIds);
 
-      return {
-        objects: instances.map((inst) => ({
-          elementId: inst.elementId,
-          displayName: inst.displayName,
-          typeId: inst.typeId,
-          parentId: inst.parentId,
-          isComposition: inst.isComposition,
-          namespaceUri: inst.namespaceUri,
-        })),
-      };
+      return instances.map((inst) => ({
+        elementId: inst.elementId,
+        displayName: inst.displayName,
+        typeId: inst.typeId,
+        parentId: inst.parentId,
+        isComposition: inst.isComposition,
+        namespaceUri: inst.namespaceUri,
+      }));
     }
   );
 
@@ -83,9 +79,7 @@ export async function registerObjectsRoutes(
 
       // For this read-only bridge, we don't track relationships.
       // Return empty array since we only have flat object instances.
-      return {
-        objects: [],
-      };
+      return [];
     }
   );
 }

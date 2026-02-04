@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import Fastify, { FastifyInstance } from 'fastify';
+import cors from '@fastify/cors';
 import { ObjectStore } from '../store/object-store.js';
 import { SubscriptionManager } from '../subscriptions/manager.js';
 import { MappingEngine } from '../mapping/engine.js';
@@ -24,6 +25,7 @@ export interface ServerConfig {
 }
 
 export interface AuthConfig {
+  enabled?: boolean;
   apiKeys: string[];
 }
 
@@ -61,6 +63,10 @@ export async function createServer(
     ...httpsOptions,
   });
 
+  await fastify.register(cors, {
+    origin: true,
+  });
+
   const context: ApiContext = { store, subscriptionManager, mappingEngine, mqttClient };
 
   fastify.decorateRequest('apiContext', null as unknown as ApiContext);
@@ -69,7 +75,8 @@ export async function createServer(
     request.apiContext = context;
   });
 
-  if (authConfig.apiKeys.length > 0) {
+  const authEnabled = authConfig.enabled ?? (authConfig.apiKeys.length > 0);
+  if (authEnabled && authConfig.apiKeys.length > 0) {
     fastify.addHook('onRequest', createAuthHook(authConfig.apiKeys));
   }
 

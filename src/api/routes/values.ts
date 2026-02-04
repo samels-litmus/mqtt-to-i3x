@@ -21,14 +21,12 @@ export async function registerValuesRoutes(
 
       const values = store.getValues(elementIds);
 
-      return {
-        values: values.map((v) => ({
-          elementId: v.elementId,
-          value: v.value,
-          timestamp: v.timestamp,
-          quality: v.quality,
-        })),
-      };
+      return values.map((v) => ({
+        elementId: v.elementId,
+        value: v.value,
+        timestamp: v.timestamp,
+        quality: v.quality,
+      }));
     }
   );
 

@@ -22,14 +22,12 @@ export async function registerObjectTypesRoutes(
         ? store.getTypesByNamespace(namespaceUri)
         : store.getAllTypes();
 
-      return {
-        objectTypes: types.map((t) => ({
-          elementId: t.elementId,
-          displayName: t.displayName,
-          namespaceUri: t.namespaceUri,
-          schema: t.schema,
-        })),
-      };
+      return types.map((t) => ({
+        elementId: t.elementId,
+        displayName: t.displayName,
+        namespaceUri: t.namespaceUri,
+        schema: t.schema,
+      }));
     }
   );
 
@@ -47,14 +45,12 @@ export async function registerObjectTypesRoutes(
         .map((id) => store.getType(id))
         .filter((t) => t !== undefined);
 
-      return {
-        objectTypes: types.map((t) => ({
-          elementId: t.elementId,
-          displayName: t.displayName,
-          namespaceUri: t.namespaceUri,
-          schema: t.schema,
-        })),
-      };
+      return types.map((t) => ({
+        elementId: t.elementId,
+        displayName: t.displayName,
+        namespaceUri: t.namespaceUri,
+        schema: t.schema,
+      }));
     }
   );
 }

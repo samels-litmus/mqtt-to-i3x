@@ -1,5 +1,4 @@
 import { FastifyInstance, FastifyPluginOptions } from 'fastify';
-import { SubscriptionManager } from '../../subscriptions/manager.js';
 
 interface SubscriptionParams {
   id: string;
@@ -23,9 +22,7 @@ export async function registerSubscriptionsRoutes(
   fastify.get('/subscriptions', async (request) => {
     const manager = request.apiContext.subscriptionManager;
     const subscriptions = manager.getAll();
-    return {
-      subscriptions: subscriptions.map((sub) => manager.toInfo(sub)),
-    };
+    return subscriptions.map((sub) => manager.toInfo(sub));
   });
 
   // POST /subscriptions - Create a new subscription
@@ -166,14 +163,12 @@ export async function registerSubscriptionsRoutes(
         return reply.code(404).send({ error: 'Subscription not found' });
       }
 
-      return {
-        values: pending.map((v) => ({
-          elementId: v.elementId,
-          value: v.value,
-          timestamp: v.timestamp,
-          quality: v.quality,
-        })),
-      };
+      return pending.map((v) => ({
+        elementId: v.elementId,
+        value: v.value,
+        timestamp: v.timestamp,
+        quality: v.quality,
+      }));
     }
   );
 }
