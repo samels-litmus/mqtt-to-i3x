@@ -6,10 +6,10 @@
 # =============================================================================
 server:
   port: 3000
-  host: "10.0.0.45"
-  tls:
-    key: "i3x-testing-20260203.key"
-    cert: "i3x-testing-20260203.crt"
+  host: "localhost"
+  #tls:
+  #  key: "i3x-testing-20260203.key"
+  #  cert: "i3x-testing-20260203.crt"
   # Uncomment for HTTPS:
   # tls:
   #   key: "/path/to/server.key"

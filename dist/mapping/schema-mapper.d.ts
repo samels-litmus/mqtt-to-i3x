@@ -10,7 +10,6 @@ export interface ObjectInstance {
     elementId: string;
     displayName: string;
     typeId: string;
-    parentId?: string;
     isComposition: boolean;
     namespaceUri: string;
 }

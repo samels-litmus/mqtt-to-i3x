@@ -5,14 +5,12 @@ export async function registerObjectTypesRoutes(fastify, _opts) {
         const types = namespaceUri
             ? store.getTypesByNamespace(namespaceUri)
             : store.getAllTypes();
-        return {
-            objectTypes: types.map((t) => ({
-                elementId: t.elementId,
-                displayName: t.displayName,
-                namespaceUri: t.namespaceUri,
-                schema: t.schema,
-            })),
-        };
+        return types.map((t) => ({
+            elementId: t.elementId,
+            displayName: t.displayName,
+            namespaceUri: t.namespaceUri,
+            schema: t.schema,
+        }));
     });
     fastify.post('/objecttypes/query', async (request, reply) => {
         const store = request.apiContext.store;
@@ -23,13 +21,11 @@ export async function registerObjectTypesRoutes(fastify, _opts) {
         const types = elementIds
             .map((id) => store.getType(id))
             .filter((t) => t !== undefined);
-        return {
-            objectTypes: types.map((t) => ({
-                elementId: t.elementId,
-                displayName: t.displayName,
-                namespaceUri: t.namespaceUri,
-                schema: t.schema,
-            })),
-        };
+        return types.map((t) => ({
+            elementId: t.elementId,
+            displayName: t.displayName,
+            namespaceUri: t.namespaceUri,
+            schema: t.schema,
+        }));
     });
 }

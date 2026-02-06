@@ -1,17 +1,29 @@
 export function createAuthHook(apiKeys) {
     const keySet = new Set(apiKeys);
     return function authHook(request, reply, done) {
-        const authHeader = request.headers.authorization;
-        if (!authHeader) {
-            reply.code(401).send({ error: 'Missing Authorization header' });
+        let token;
+        // Check X-API-Key header first
+        const apiKeyHeader = request.headers['x-api-key'];
+        if (apiKeyHeader) {
+            token = Array.isArray(apiKeyHeader) ? apiKeyHeader[0] : apiKeyHeader;
+        }
+        // Check Authorization header (Bearer or Token)
+        if (!token) {
+            const authHeader = request.headers.authorization;
+            if (authHeader) {
+                const parts = authHeader.split(' ');
+                if (parts.length === 2) {
+                    const scheme = parts[0].toLowerCase();
+                    if (scheme === 'bearer' || scheme === 'token') {
+                        token = parts[1];
+                    }
+                }
+            }
+        }
+        if (!token) {
+            reply.code(401).send({ error: 'Missing Authorization header or X-API-Key' });
             return;
         }
-        const parts = authHeader.split(' ');
-        if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') {
-            reply.code(401).send({ error: 'Invalid Authorization header format' });
-            return;
-        }
-        const token = parts[1];
         if (!keySet.has(token)) {
             reply.code(403).send({ error: 'Invalid API key' });
             return;

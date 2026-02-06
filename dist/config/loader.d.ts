@@ -51,6 +51,7 @@ export interface AppConfig {
         };
     };
     auth: {
+        enabled?: boolean;
         apiKeys: string[];
     };
     mqtt: MqttConfig;

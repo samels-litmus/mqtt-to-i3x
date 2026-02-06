@@ -3,22 +3,20 @@ export async function registerAdminMappingsRoutes(fastify, _opts) {
     fastify.get('/admin/mappings', async (request) => {
         const engine = request.apiContext.mappingEngine;
         const rules = engine.listRules();
-        return {
-            mappings: rules.map((r) => ({
-                id: r.id,
-                topicPattern: r.topicPattern,
-                codec: r.codec,
-                extraction: r.extraction,
-                codecOptions: r.codecOptions,
-                namespaceUri: r.namespaceUri,
-                objectTypeId: r.objectTypeId,
-                elementIdTemplate: r.elementIdTemplate,
-                displayNameTemplate: r.displayNameTemplate,
-                valueExtractor: r.valueExtractor,
-                timestampExtractor: r.timestampExtractor,
-                qualityExtractor: r.qualityExtractor,
-            })),
-        };
+        return rules.map((r) => ({
+            id: r.id,
+            topicPattern: r.topicPattern,
+            codec: r.codec,
+            extraction: r.extraction,
+            codecOptions: r.codecOptions,
+            namespaceUri: r.namespaceUri,
+            objectTypeId: r.objectTypeId,
+            elementIdTemplate: r.elementIdTemplate,
+            displayNameTemplate: r.displayNameTemplate,
+            valueExtractor: r.valueExtractor,
+            timestampExtractor: r.timestampExtractor,
+            qualityExtractor: r.qualityExtractor,
+        }));
     });
     // POST /admin/mappings - Create a new mapping rule
     fastify.post('/admin/mappings', async (request, reply) => {

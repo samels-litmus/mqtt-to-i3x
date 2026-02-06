@@ -1,1 +1,1 @@
-export { ObjectType, Namespace, ValueChangeListener, ObjectStore, objectStore, } from './object-store.js';
+export { ObjectType, Namespace, RelationshipType, Relationship, ValueChangeListener, ObjectStore, objectStore, } from './object-store.js';

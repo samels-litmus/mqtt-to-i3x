@@ -13,6 +13,7 @@ export interface ServerConfig {
     };
 }
 export interface AuthConfig {
+    enabled?: boolean;
     apiKeys: string[];
 }
 export interface ApiContext {

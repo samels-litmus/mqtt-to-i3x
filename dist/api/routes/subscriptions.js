@@ -3,9 +3,7 @@ export async function registerSubscriptionsRoutes(fastify, _opts) {
     fastify.get('/subscriptions', async (request) => {
         const manager = request.apiContext.subscriptionManager;
         const subscriptions = manager.getAll();
-        return {
-            subscriptions: subscriptions.map((sub) => manager.toInfo(sub)),
-        };
+        return subscriptions.map((sub) => manager.toInfo(sub));
     });
     // POST /subscriptions - Create a new subscription
     fastify.post('/subscriptions', async (request, reply) => {
@@ -97,13 +95,11 @@ export async function registerSubscriptionsRoutes(fastify, _opts) {
         if (pending === undefined) {
             return reply.code(404).send({ error: 'Subscription not found' });
         }
-        return {
-            values: pending.map((v) => ({
-                elementId: v.elementId,
-                value: v.value,
-                timestamp: v.timestamp,
-                quality: v.quality,
-            })),
-        };
+        return pending.map((v) => ({
+            elementId: v.elementId,
+            value: v.value,
+            timestamp: v.timestamp,
+            quality: v.quality,
+        }));
     });
 }
