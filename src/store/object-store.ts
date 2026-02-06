@@ -12,6 +12,18 @@ export interface Namespace {
   displayName: string;
 }
 
+export interface RelationshipType {
+  elementId: string;
+  displayName: string;
+  namespaceUri: string;
+  reverseOf: string;
+}
+
+export interface Relationship {
+  targetElementId: string;
+  relationshipTypeId: string;
+}
+
 export type ValueChangeListener = (
   elementId: string,
   value: ObjectValue,
@@ -27,7 +39,27 @@ export class ObjectStore {
   private byNamespace = new Map<string, Set<string>>();
   private byType = new Map<string, Set<string>>();
 
+  private relationshipTypes = new Map<string, RelationshipType>();
+  private relationships = new Map<string, Relationship[]>();
+  private targetIndex = new Map<string, Set<string>>();
+
   private listeners: ValueChangeListener[] = [];
+
+  constructor() {
+    this.seedBuiltInRelationshipTypes();
+  }
+
+  private seedBuiltInRelationshipTypes(): void {
+    const builtIn: RelationshipType[] = [
+      { elementId: 'HasParent', displayName: 'Has Parent', namespaceUri: 'urn:i3x:relationships', reverseOf: 'HasChildren' },
+      { elementId: 'HasChildren', displayName: 'Has Children', namespaceUri: 'urn:i3x:relationships', reverseOf: 'HasParent' },
+      { elementId: 'HasComponent', displayName: 'Has Component', namespaceUri: 'urn:i3x:relationships', reverseOf: 'ComponentOf' },
+      { elementId: 'ComponentOf', displayName: 'Component Of', namespaceUri: 'urn:i3x:relationships', reverseOf: 'HasComponent' },
+    ];
+    for (const rt of builtIn) {
+      this.relationshipTypes.set(rt.elementId, rt);
+    }
+  }
 
   upsert(elementId: string, value: ObjectValue, instance?: ObjectInstance): void {
     this.values.set(elementId, value);
@@ -42,6 +74,21 @@ export class ObjectStore {
       this.instances.set(elementId, instance);
       this.addToIndex(this.byNamespace, instance.namespaceUri, elementId);
       this.addToIndex(this.byType, instance.typeId, elementId);
+
+      // Infer parent from elementId hierarchy
+      const parentId = this.inferParentId(elementId);
+
+      if (parentId) {
+        // Ensure parent exists (create placeholder if needed)
+        this.ensureParentExists(parentId, instance.namespaceUri);
+
+        // Clear old organizational relationships for this element
+        this.removeRelationshipsByType(elementId, 'HasParent');
+
+        // Create bidirectional organizational relationships
+        this.addRelationship(elementId, parentId, 'HasParent');
+        this.addRelationship(parentId, elementId, 'HasChildren');
+      }
     }
 
     for (const listener of this.listeners) {
@@ -133,6 +180,171 @@ export class ObjectStore {
     return Array.from(this.namespaces.values());
   }
 
+  // --- Relationship Type methods ---
+
+  registerRelationshipType(type: RelationshipType): void {
+    this.relationshipTypes.set(type.elementId, type);
+  }
+
+  getRelationshipType(elementId: string): RelationshipType | undefined {
+    return this.relationshipTypes.get(elementId);
+  }
+
+  getAllRelationshipTypes(): RelationshipType[] {
+    return Array.from(this.relationshipTypes.values());
+  }
+
+  getRelationshipTypesByNamespace(namespaceUri: string): RelationshipType[] {
+    return Array.from(this.relationshipTypes.values()).filter(
+      (rt) => rt.namespaceUri === namespaceUri
+    );
+  }
+
+  // --- Relationship storage methods ---
+
+  addRelationship(sourceId: string, targetId: string, typeId: string): void {
+    let rels = this.relationships.get(sourceId);
+    if (!rels) {
+      rels = [];
+      this.relationships.set(sourceId, rels);
+    }
+    // Deduplicate: same source+target+type = no-op
+    if (rels.some(r => r.targetElementId === targetId && r.relationshipTypeId === typeId)) {
+      return;
+    }
+    rels.push({ targetElementId: targetId, relationshipTypeId: typeId });
+
+    // Update reverse index
+    let sources = this.targetIndex.get(targetId);
+    if (!sources) {
+      sources = new Set();
+      this.targetIndex.set(targetId, sources);
+    }
+    sources.add(sourceId);
+  }
+
+  getRelationships(elementId: string, typeId?: string): Relationship[] {
+    const rels = this.relationships.get(elementId);
+    if (!rels) return [];
+    if (!typeId) return rels;
+    return rels.filter(r => r.relationshipTypeId === typeId);
+  }
+
+  getRelatedElementIds(elementId: string, typeId?: string): string[] {
+    return this.getRelationships(elementId, typeId).map(r => r.targetElementId);
+  }
+
+  getSourcesForTarget(targetId: string): string[] {
+    const sources = this.targetIndex.get(targetId);
+    return sources ? Array.from(sources) : [];
+  }
+
+  removeRelationship(sourceId: string, targetId: string, typeId?: string): boolean {
+    const rels = this.relationships.get(sourceId);
+    if (!rels) return false;
+
+    const before = rels.length;
+    const filtered = typeId
+      ? rels.filter(r => !(r.targetElementId === targetId && r.relationshipTypeId === typeId))
+      : rels.filter(r => r.targetElementId !== targetId);
+
+    if (filtered.length === before) return false;
+
+    if (filtered.length === 0) {
+      this.relationships.delete(sourceId);
+    } else {
+      this.relationships.set(sourceId, filtered);
+    }
+
+    // Update reverse index: check if sourceId still has any rel pointing to targetId
+    const stillPoints = filtered.some(r => r.targetElementId === targetId);
+    if (!stillPoints) {
+      const sources = this.targetIndex.get(targetId);
+      if (sources) {
+        sources.delete(sourceId);
+        if (sources.size === 0) this.targetIndex.delete(targetId);
+      }
+    }
+
+    return true;
+  }
+
+  removeRelationshipsByType(elementId: string, typeId: string): void {
+    const rels = this.relationships.get(elementId);
+    if (!rels) return;
+
+    const toRemove = rels.filter(r => r.relationshipTypeId === typeId);
+    if (toRemove.length === 0) return;
+
+    const remaining = rels.filter(r => r.relationshipTypeId !== typeId);
+    if (remaining.length === 0) {
+      this.relationships.delete(elementId);
+    } else {
+      this.relationships.set(elementId, remaining);
+    }
+
+    // Clean up reverse index for each removed relationship
+    for (const rel of toRemove) {
+      const stillPoints = remaining.some(r => r.targetElementId === rel.targetElementId);
+      if (!stillPoints) {
+        const sources = this.targetIndex.get(rel.targetElementId);
+        if (sources) {
+          sources.delete(elementId);
+          if (sources.size === 0) this.targetIndex.delete(rel.targetElementId);
+        }
+      }
+    }
+  }
+
+  clearRelationships(elementId: string): void {
+    // Remove all relationships where elementId is source
+    const outgoing = this.relationships.get(elementId);
+    if (outgoing) {
+      for (const rel of outgoing) {
+        const sources = this.targetIndex.get(rel.targetElementId);
+        if (sources) {
+          sources.delete(elementId);
+          if (sources.size === 0) this.targetIndex.delete(rel.targetElementId);
+        }
+      }
+      this.relationships.delete(elementId);
+    }
+
+    // Remove all relationships where elementId is target (via reverse index)
+    const incomingSources = this.targetIndex.get(elementId);
+    if (incomingSources) {
+      for (const sourceId of incomingSources) {
+        const rels = this.relationships.get(sourceId);
+        if (rels) {
+          const filtered = rels.filter(r => r.targetElementId !== elementId);
+          if (filtered.length === 0) {
+            this.relationships.delete(sourceId);
+          } else {
+            this.relationships.set(sourceId, filtered);
+          }
+        }
+      }
+      this.targetIndex.delete(elementId);
+    }
+  }
+
+  // --- Computed property helpers (derived from relationship map) ---
+
+  getParentId(elementId: string): string | undefined {
+    const rels = this.getRelationships(elementId, 'HasParent');
+    return rels.length > 0 ? rels[0].targetElementId : undefined;
+  }
+
+  hasChildren(elementId: string): boolean {
+    const sources = this.targetIndex.get(elementId);
+    if (!sources || sources.size === 0) return false;
+    for (const sourceId of sources) {
+      const rels = this.getRelationships(sourceId, 'HasParent');
+      if (rels.some(r => r.targetElementId === elementId)) return true;
+    }
+    return false;
+  }
+
   addChangeListener(listener: ValueChangeListener): void {
     this.listeners.push(listener);
   }
@@ -151,6 +363,7 @@ export class ObjectStore {
       this.removeFromIndex(this.byType, instance.typeId, elementId);
       this.instances.delete(elementId);
     }
+    this.clearRelationships(elementId);
     return this.values.delete(elementId);
   }
 
@@ -159,15 +372,73 @@ export class ObjectStore {
     this.instances.clear();
     this.byNamespace.clear();
     this.byType.clear();
+    this.relationships.clear();
+    this.targetIndex.clear();
   }
 
-  stats(): { values: number; instances: number; types: number; namespaces: number } {
+  stats(): {
+    values: number;
+    instances: number;
+    types: number;
+    namespaces: number;
+    relationshipTypes: number;
+    relationships: number;
+  } {
+    let totalRelationships = 0;
+    for (const rels of this.relationships.values()) {
+      totalRelationships += rels.length;
+    }
     return {
       values: this.values.size,
       instances: this.instances.size,
       types: this.types.size,
       namespaces: this.namespaces.size,
+      relationshipTypes: this.relationshipTypes.size,
+      relationships: totalRelationships,
     };
+  }
+
+  private ensureParentExists(parentId: string, childNamespaceUri: string): void {
+    if (this.instances.has(parentId)) return;
+
+    // Create a placeholder instance
+    const segments = parentId.split('.');
+    const displayName = segments[segments.length - 1];
+
+    const placeholder: ObjectInstance = {
+      elementId: parentId,
+      displayName,
+      typeId: 'Placeholder',
+      namespaceUri: childNamespaceUri,
+      isComposition: false,
+    };
+
+    const placeholderValue: ObjectValue = {
+      elementId: parentId,
+      value: null,
+      timestamp: new Date().toISOString(),
+      quality: 'uncertain',
+    };
+
+    // Store directly (don't recurse through upsert to avoid infinite loop)
+    this.values.set(parentId, placeholderValue);
+    this.instances.set(parentId, placeholder);
+    this.addToIndex(this.byNamespace, placeholder.namespaceUri, parentId);
+    this.addToIndex(this.byType, placeholder.typeId, parentId);
+
+    // Recurse: the placeholder itself may have a parent
+    const grandparentId = this.inferParentId(parentId);
+    if (grandparentId) {
+      this.ensureParentExists(grandparentId, childNamespaceUri);
+      this.addRelationship(parentId, grandparentId, 'HasParent');
+      this.addRelationship(grandparentId, parentId, 'HasChildren');
+    }
+  }
+
+  private inferParentId(elementId: string): string | undefined {
+    const parts = elementId.split('.');
+    if (parts.length <= 1) return undefined;
+    return parts.slice(0, -1).join('.');
   }
 
   private addToIndex(index: Map<string, Set<string>>, key: string, elementId: string): void {

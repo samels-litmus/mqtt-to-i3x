@@ -20,6 +20,8 @@ export {
   objectStore,
   ObjectType,
   Namespace,
+  RelationshipType,
+  Relationship,
   ValueChangeListener,
 } from './store/index.js';
 export {

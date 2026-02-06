@@ -1,6 +1,8 @@
 export {
   ObjectType,
   Namespace,
+  RelationshipType,
+  Relationship,
   ValueChangeListener,
   ObjectStore,
   objectStore,

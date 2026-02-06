@@ -13,6 +13,7 @@ import { registerValuesRoutes } from './routes/values.js';
 import { registerSubscriptionsRoutes } from './routes/subscriptions.js';
 import { registerAdminTypesRoutes } from './routes/admin-types.js';
 import { registerAdminMappingsRoutes } from './routes/admin-mappings.js';
+import { registerRelationshipTypesRoutes } from './routes/relationship-types.js';
 
 export interface ServerConfig {
   port: number;
@@ -87,6 +88,7 @@ export async function createServer(
   await fastify.register(registerSubscriptionsRoutes, { prefix: '' });
   await fastify.register(registerAdminTypesRoutes, { prefix: '' });
   await fastify.register(registerAdminMappingsRoutes, { prefix: '' });
+  await fastify.register(registerRelationshipTypesRoutes, { prefix: '' });
 
   return fastify;
 }
