@@ -2,6 +2,7 @@ import { MappingEngine, MatchResult } from '../mapping/engine.js';
 import { extract } from '../extraction/byte-extractor.js';
 import { codecRegistry } from '../codecs/registry.js';
 import { SchemaMapper, MappedResult } from '../mapping/schema-mapper.js';
+import { PayloadDecomposer } from '../mapping/decomposer.js';
 import { ObjectStore } from '../store/object-store.js';
 import { MqttClientWrapper } from './client.js';
 
@@ -21,6 +22,7 @@ export interface MessageStats {
   received: number;
   matched: number;
   processed: number;
+  decomposed: number;
   errors: number;
 }
 
@@ -28,10 +30,12 @@ export class MessageHandler {
   private mappingEngine: MappingEngine;
   private schemaMapper: SchemaMapper;
   private objectStore: ObjectStore;
+  private decomposer = new PayloadDecomposer();
   private stats: MessageStats = {
     received: 0,
     matched: 0,
     processed: 0,
+    decomposed: 0,
     errors: 0,
   };
 
@@ -65,6 +69,17 @@ export class MessageHandler {
       const mapped = this.schemaMapper.map(rule, topic, captures, decoded, receiveTime);
       this.objectStore.upsert(mapped.elementId, mapped.value, mapped.instance);
 
+      // Decompose rich payloads into child objects if configured
+      if (rule.decompose?.enabled) {
+        const children = this.decomposer.decompose(decoded, mapped, rule.decompose);
+        for (const { result: child, parentComponentId } of children) {
+          this.objectStore.upsert(child.elementId, child.value, child.instance);
+          this.objectStore.addRelationship(parentComponentId, child.elementId, 'HasComponent');
+          this.objectStore.addRelationship(child.elementId, parentComponentId, 'ComponentOf');
+        }
+        this.stats.decomposed += children.length;
+      }
+
       this.stats.processed++;
       return { topic, matchResult, mapped };
     } catch {
@@ -82,6 +97,7 @@ export class MessageHandler {
       received: 0,
       matched: 0,
       processed: 0,
+      decomposed: 0,
       errors: 0,
     };
   }

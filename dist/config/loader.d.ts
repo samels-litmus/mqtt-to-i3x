@@ -22,6 +22,19 @@ export interface ObjectTypeConfig {
     namespaceUri: string;
     schema?: object;
 }
+export interface DecomposeConfig {
+    enabled: boolean;
+    /** "abelara" = detect _model/_name/_path markers; "flat" = all nested objects; "auto" = abelara then flat */
+    strategy: 'abelara' | 'flat' | 'auto';
+    /** JSONPath to sub-tree to decompose (default: entire decoded payload) */
+    root?: string;
+    /** "dot-append" (default) or "path" (use _path field from payload) */
+    childIdStrategy?: 'dot-append' | 'path';
+    /** Max recursion depth (default 10, 0 = unlimited) */
+    maxDepth?: number;
+    /** Fields to skip during decomposition */
+    excludeFields?: string[];
+}
 export interface MappingRule {
     id: string;
     topicPattern: string;
@@ -35,6 +48,7 @@ export interface MappingRule {
     valueExtractor?: string;
     timestampExtractor?: string;
     qualityExtractor?: string;
+    decompose?: DecomposeConfig;
 }
 export interface CustomCodecConfig {
     name: string;

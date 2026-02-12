@@ -16,12 +16,14 @@ export interface MessageStats {
     received: number;
     matched: number;
     processed: number;
+    decomposed: number;
     errors: number;
 }
 export declare class MessageHandler {
     private mappingEngine;
     private schemaMapper;
     private objectStore;
+    private decomposer;
     private stats;
     constructor(deps: MessageHandlerDeps);
     handle(topic: string, payload: Buffer): ProcessedMessage | null;

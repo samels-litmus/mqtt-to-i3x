@@ -12,15 +12,18 @@ export async function registerObjectsRoutes(fastify, _opts) {
         else {
             instances = store.getAllInstances();
         }
-        return instances.map((inst) => ({
-            elementId: inst.elementId,
-            displayName: inst.displayName,
-            typeId: inst.typeId,
-            parentId: store.getParentId(inst.elementId),
-            hasChildren: store.hasChildren(inst.elementId),
-            isComposition: inst.isComposition,
-            namespaceUri: inst.namespaceUri,
-        }));
+        return instances.map((inst) => {
+            const children = store.hasChildren(inst.elementId);
+            return {
+                elementId: inst.elementId,
+                displayName: inst.displayName,
+                typeId: inst.typeId,
+                parentId: store.getParentId(inst.elementId),
+                hasChildren: children,
+                isComposition: children,
+                namespaceUri: inst.namespaceUri,
+            };
+        });
     });
     fastify.post('/objects/list', async (request, reply) => {
         const store = request.apiContext.store;
@@ -29,15 +32,18 @@ export async function registerObjectsRoutes(fastify, _opts) {
             return reply.code(400).send({ error: 'elementIds must be an array' });
         }
         const instances = store.getInstances(elementIds);
-        return instances.map((inst) => ({
-            elementId: inst.elementId,
-            displayName: inst.displayName,
-            typeId: inst.typeId,
-            parentId: store.getParentId(inst.elementId),
-            hasChildren: store.hasChildren(inst.elementId),
-            isComposition: inst.isComposition,
-            namespaceUri: inst.namespaceUri,
-        }));
+        return instances.map((inst) => {
+            const children = store.hasChildren(inst.elementId);
+            return {
+                elementId: inst.elementId,
+                displayName: inst.displayName,
+                typeId: inst.typeId,
+                parentId: store.getParentId(inst.elementId),
+                hasChildren: children,
+                isComposition: children,
+                namespaceUri: inst.namespaceUri,
+            };
+        });
     });
     fastify.post('/objects/related', async (request, reply) => {
         const store = request.apiContext.store;
@@ -59,21 +65,22 @@ export async function registerObjectsRoutes(fastify, _opts) {
             const inst = store.getInstance(targetId);
             if (!inst)
                 return null;
+            const children = store.hasChildren(inst.elementId);
             const obj = {
                 elementId: inst.elementId,
                 displayName: inst.displayName,
                 parentId: store.getParentId(inst.elementId),
-                hasChildren: store.hasChildren(inst.elementId),
+                hasChildren: children,
                 namespaceUri: inst.namespaceUri,
             };
             if (includeMetadata) {
                 obj.typeId = inst.typeId;
-                obj.isComposition = inst.isComposition;
+                obj.isComposition = children;
             }
             return obj;
         })
             .filter(Boolean);
-        return { objects };
+        return objects;
     });
 }
 /**

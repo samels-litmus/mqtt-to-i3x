@@ -958,6 +958,10 @@ mappings:
     objectTypeId: "CMMSAsset"
     elementIdTemplate: "Enterprise B.maintainx.{site}.{area}.{line}.{equipment}.{info}"
     displayNameTemplate: "MaintainX {equipment} {info}"
+    decompose:
+      enabled: true
+      strategy: "flat"
+      excludeFields: ["id", "parentId", "creatorId", "criticalityId"]
 
   - id: "entb-maintainx-4"
     topicPattern: "Enterprise B/maintainx/{site}/{area}/{line}/{info}"
@@ -966,6 +970,10 @@ mappings:
     objectTypeId: "CMMSAsset"
     elementIdTemplate: "Enterprise B.maintainx.{site}.{area}.{line}.{info}"
     displayNameTemplate: "MaintainX {line} {info}"
+    decompose:
+      enabled: true
+      strategy: "flat"
+      excludeFields: ["id", "parentId", "creatorId", "criticalityId"]
 
   - id: "entb-maintainx-2"
     topicPattern: "Enterprise B/maintainx/{site}/{info}"
@@ -974,6 +982,10 @@ mappings:
     objectTypeId: "CMMSAsset"
     elementIdTemplate: "Enterprise B.maintainx.{site}.{info}"
     displayNameTemplate: "MaintainX {site} {info}"
+    decompose:
+      enabled: true
+      strategy: "flat"
+      excludeFields: ["id", "parentId", "creatorId", "criticalityId"]
 
   # ---------------------------------------------------------------------------
   # Enterprise B / opto22 - Convenience store IoT (JSON)
@@ -1240,6 +1252,10 @@ mappings:
     objectTypeId: "CMMSAsset"
     elementIdTemplate: "Enterprise C.maintainx.{info}"
     displayNameTemplate: "MaintainX {info}"
+    decompose:
+      enabled: true
+      strategy: "flat"
+      excludeFields: ["id", "parentId", "creatorId", "criticalityId"]
 
   # Enterprise C metadata
   - id: "entc-metadata"
@@ -1303,6 +1319,12 @@ mappings:
     displayNameTemplate: "{equipment} {kpi}"
     valueExtractor: "$.value.Value"
     timestampExtractor: "$.timestamp"
+    decompose:
+      enabled: true
+      strategy: "abelara"
+      root: "$.value"
+      maxDepth: 3
+      excludeFields: ["_model", "_name", "_path", "LogId", "Id"]
 
   # ---------------------------------------------------------------------------
   # abelara / Machine state
@@ -1316,6 +1338,12 @@ mappings:
     displayNameTemplate: "{equipment} State"
     valueExtractor: "$.value"
     timestampExtractor: "$.timestamp"
+    decompose:
+      enabled: true
+      strategy: "abelara"
+      root: "$.value"
+      maxDepth: 3
+      excludeFields: ["_model", "_name", "_path", "LogId", "FromId", "TypeId"]
 
   # ---------------------------------------------------------------------------
   # abelara / Machine Identification (OPC UA Machinery)
@@ -1328,6 +1356,10 @@ mappings:
     elementIdTemplate: "abelara.{enterprise}.{site}.{area}.{line}.{equipment}.MachineIdentification"
     displayNameTemplate: "{equipment} ID"
     timestampExtractor: "$.timestamp"
+    decompose:
+      enabled: true
+      strategy: "flat"
+      excludeFields: ["$comment", "$namespace", "timestamp", "_model", "_name", "_path"]
 
   # ---------------------------------------------------------------------------
   # abelara / Counts, material, production runs
@@ -1340,6 +1372,12 @@ mappings:
     elementIdTemplate: "abelara.{enterprise}.{site}.{area}.{line}.{equipment}.{datapoint}"
     displayNameTemplate: "{equipment} {datapoint}"
     timestampExtractor: "$.timestamp"
+    decompose:
+      enabled: true
+      strategy: "abelara"
+      root: "$.value"
+      maxDepth: 5
+      excludeFields: ["_model", "_name", "_path", "LogId"]
 
   # ---------------------------------------------------------------------------
   # abelara / UNS v1 individual tags (Data/Source envelope)
@@ -1356,6 +1394,12 @@ mappings:
     valueExtractor: "$.Data.Value"
     timestampExtractor: "$.Data.Timestamp"
     qualityExtractor: "$.Data.Quality"
+    decompose:
+      enabled: true
+      strategy: "auto"
+      root: "$.Data"
+      maxDepth: 3
+      excludeFields: ["Value", "Timestamp", "Quality"]
 
   - id: "abelara-uns-v1-7"
     topicPattern: "abelara/uns-v1/{ent}/{site}/{area}/{line}/{equip}/{tag}"
@@ -1367,6 +1411,12 @@ mappings:
     valueExtractor: "$.Data.Value"
     timestampExtractor: "$.Data.Timestamp"
     qualityExtractor: "$.Data.Quality"
+    decompose:
+      enabled: true
+      strategy: "auto"
+      root: "$.Data"
+      maxDepth: 3
+      excludeFields: ["Value", "Timestamp", "Quality"]
 
   - id: "abelara-uns-v1-5"
     topicPattern: "abelara/uns-v1/{ent}/{site}/{area}/{line}/{tag}"
@@ -1378,6 +1428,12 @@ mappings:
     valueExtractor: "$.Data.Value"
     timestampExtractor: "$.Data.Timestamp"
     qualityExtractor: "$.Data.Quality"
+    decompose:
+      enabled: true
+      strategy: "auto"
+      root: "$.Data"
+      maxDepth: 3
+      excludeFields: ["Value", "Timestamp", "Quality"]
 
   - id: "abelara-uns-v1-3"
     topicPattern: "abelara/uns-v1/{a}/{b}/{c}"
@@ -1389,6 +1445,12 @@ mappings:
     valueExtractor: "$.Data.Value"
     timestampExtractor: "$.Data.Timestamp"
     qualityExtractor: "$.Data.Quality"
+    decompose:
+      enabled: true
+      strategy: "auto"
+      root: "$.Data"
+      maxDepth: 3
+      excludeFields: ["Value", "Timestamp", "Quality"]
 
   # ---------------------------------------------------------------------------
   # abelara / UNS v2
@@ -1403,6 +1465,12 @@ mappings:
     valueExtractor: "$.Data.Value"
     timestampExtractor: "$.Data.Timestamp"
     qualityExtractor: "$.Data.Quality"
+    decompose:
+      enabled: true
+      strategy: "auto"
+      root: "$.Data"
+      maxDepth: 3
+      excludeFields: ["Value", "Timestamp", "Quality"]
 
   - id: "abelara-uns-v2-7"
     topicPattern: "abelara/uns-v2/{ent}/{site}/{area}/{line}/{equip}/{tag}"
@@ -1414,6 +1482,12 @@ mappings:
     valueExtractor: "$.Data.Value"
     timestampExtractor: "$.Data.Timestamp"
     qualityExtractor: "$.Data.Quality"
+    decompose:
+      enabled: true
+      strategy: "auto"
+      root: "$.Data"
+      maxDepth: 3
+      excludeFields: ["Value", "Timestamp", "Quality"]
 
   - id: "abelara-uns-v2-5"
     topicPattern: "abelara/uns-v2/{ent}/{site}/{area}/{line}/{tag}"
@@ -1425,6 +1499,12 @@ mappings:
     valueExtractor: "$.Data.Value"
     timestampExtractor: "$.Data.Timestamp"
     qualityExtractor: "$.Data.Quality"
+    decompose:
+      enabled: true
+      strategy: "auto"
+      root: "$.Data"
+      maxDepth: 3
+      excludeFields: ["Value", "Timestamp", "Quality"]
 
   - id: "abelara-uns-v2-3"
     topicPattern: "abelara/uns-v2/{a}/{b}/{c}"
@@ -1436,6 +1516,12 @@ mappings:
     valueExtractor: "$.Data.Value"
     timestampExtractor: "$.Data.Timestamp"
     qualityExtractor: "$.Data.Quality"
+    decompose:
+      enabled: true
+      strategy: "auto"
+      root: "$.Data"
+      maxDepth: 3
+      excludeFields: ["Value", "Timestamp", "Quality"]
 
   # ---------------------------------------------------------------------------
   # abelara / Infrastructure (Ignition gateways)

@@ -1,33 +1,22 @@
 export async function registerValuesRoutes(fastify, _opts) {
     // POST /objects/value - Get last-known values for specified elementIds
-    // Per RFC 4.2.1.1, maxDepth controls composition value recursion:
-    //   maxDepth=1 (default): direct value only
+    // Response is a nested object tree keyed by elementId.
+    // Each node has a "data" array and nested children keyed by their elementId.
+    // maxDepth controls composition recursion:
     //   maxDepth=0: infinite recursion through HasComponent relationships
-    //   maxDepth=N (N>1): recurse up to N levels
+    //   maxDepth=1 (default): direct value only, no children
+    //   maxDepth=N (N>1): recurse up to N levels (root is level 0)
     fastify.post('/objects/value', async (request, reply) => {
         const store = request.apiContext.store;
         const { elementIds, maxDepth = 1 } = request.body;
         if (!Array.isArray(elementIds)) {
             return reply.code(400).send({ error: 'elementIds must be an array' });
         }
-        return elementIds.map((id) => {
-            const value = store.getValue(id);
-            if (!value)
-                return null;
-            const instance = store.getInstance(id);
-            const base = {
-                elementId: value.elementId,
-                value: value.value,
-                timestamp: value.timestamp,
-                quality: value.quality,
-            };
-            // For composition elements with maxDepth !== 1, include component values
-            if (instance?.isComposition && maxDepth !== 1) {
-                const components = buildComposedValue(store, id, maxDepth, 0);
-                return { ...base, components };
-            }
-            return base;
-        }).filter(Boolean);
+        const result = {};
+        for (const id of elementIds) {
+            result[id] = buildValueNode(store, id, maxDepth, 0);
+        }
+        return result;
     });
     // POST /objects/history - Not implemented (read-only bridge with no history)
     fastify.post('/objects/history', async (_request, reply) => {
@@ -38,29 +27,41 @@ export async function registerValuesRoutes(fastify, _opts) {
     });
 }
 /**
- * Recursively build composed values by traversing HasComponent relationships.
- * maxDepth=0: infinite recursion
- * maxDepth=N (N>1): recurse up to N levels
+ * Build a value node for an elementId in the spec format:
+ * {
+ *   "data": [{ "value": ..., "quality": "...", "timestamp": "..." }],
+ *   "child-id": { "data": [...], ... }
+ * }
+ *
+ * Depth logic:
+ *   maxDepth=0  -> infinite (always recurse)
+ *   maxDepth=1  -> root only (currentDepth 0, no children)
+ *   maxDepth=N  -> recurse while currentDepth < maxDepth - 1
+ *                  e.g. maxDepth=100 means levels 0..99
  */
-function buildComposedValue(store, elementId, maxDepth, currentDepth) {
-    const result = {};
-    const components = store.getRelationships(elementId, 'HasComponent');
-    for (const comp of components) {
-        const childValue = store.getValue(comp.targetElementId);
-        const childInstance = store.getInstance(comp.targetElementId);
-        // Should we recurse into this child?
-        const shouldRecurse = childInstance?.isComposition &&
-            (maxDepth === 0 || currentDepth + 1 < maxDepth - 1);
-        if (shouldRecurse) {
-            const nested = buildComposedValue(store, comp.targetElementId, maxDepth, currentDepth + 1);
-            result[comp.targetElementId] = {
-                value: childValue?.value ?? null,
-                components: nested,
-            };
-        }
-        else if (childValue) {
-            result[comp.targetElementId] = childValue.value;
+function buildValueNode(store, elementId, maxDepth, currentDepth) {
+    const node = {};
+    // Add data array (last-known-value only, so 0 or 1 entries)
+    const value = store.getValue(elementId);
+    if (value) {
+        node.data = [
+            {
+                value: value.value,
+                quality: value.quality,
+                timestamp: value.timestamp,
+            },
+        ];
+    }
+    else {
+        node.data = [];
+    }
+    // Recurse into HasComponent children if depth budget remains
+    const shouldRecurse = maxDepth === 0 || currentDepth < maxDepth - 1;
+    if (shouldRecurse) {
+        const children = store.getRelationships(elementId, 'HasComponent');
+        for (const child of children) {
+            node[child.targetElementId] = buildValueNode(store, child.targetElementId, maxDepth, currentDepth + 1);
         }
     }
-    return result;
+    return node;
 }

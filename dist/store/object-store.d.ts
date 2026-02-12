@@ -61,7 +61,7 @@ export declare class ObjectStore {
     removeRelationship(sourceId: string, targetId: string, typeId?: string): boolean;
     removeRelationshipsByType(elementId: string, typeId: string): void;
     clearRelationships(elementId: string): void;
-    getParentId(elementId: string): string | undefined;
+    getParentId(elementId: string): string;
     hasChildren(elementId: string): boolean;
     addChangeListener(listener: ValueChangeListener): void;
     removeChangeListener(listener: ValueChangeListener): boolean;

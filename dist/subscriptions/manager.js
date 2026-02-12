@@ -63,10 +63,24 @@ export class SubscriptionManager {
                 }
                 sub.pendingQueue.push(value);
                 // Push to SSE if connected (best-effort real-time)
+                // Format matches /objects/value spec: array of { elementId: { data: [VQT] } }
                 const sse = this.sseConnections.get(id);
                 if (sse) {
                     try {
-                        sse.raw.write(`data: ${JSON.stringify(value)}\n\n`);
+                        const ssePayload = [
+                            {
+                                [value.elementId]: {
+                                    data: [
+                                        {
+                                            value: value.value,
+                                            quality: value.quality ?? 'Good',
+                                            timestamp: value.timestamp,
+                                        },
+                                    ],
+                                },
+                            },
+                        ];
+                        sse.raw.write(`data: ${JSON.stringify(ssePayload)}\n\n`);
                     }
                     catch {
                         // Connection may have closed
