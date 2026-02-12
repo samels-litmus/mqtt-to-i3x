@@ -1,10 +1,14 @@
 # =============================================================================
 # i3x-via-mqtt Configuration File
-# CESMII SM Profile Configuration for Enterprise A Glass Container Manufacturing
+# CESMII SM Profile Configuration for ProveIT Virtual Factory
 #
-# Models Enterprise A (Dallas) as a VDMA 40001-1 Machine Identification hierarchy
-# with live process values from both "Dallas" (summary/description) and "aveva"
-# (real-time SCADA) data sources.
+# Enterprises:
+#   A - Glass Container Manufacturing (Dallas)
+#   B - Beverage Manufacturing (Cappy Hour Inc, 3 sites)
+#   C - Biopharmaceutical Manufacturing (Point Three Therapeutics)
+#   abelara - Cappy Hour Inc (alternative UNS path)
+#   fuuz    - i3X-native bio manufacturing telemetry
+#   resevo  - Simple demo/integration values
 #
 # SM Profile hierarchy:
 #   Enterprise > Site > Line > Area > Equipment (MachineIdentificationType)
@@ -54,6 +58,26 @@ namespaces:
   # ProveIT Enterprise A namespace
   - uri: "urn:proveit:enterprise-a"
     displayName: "Enterprise A - Glass Manufacturing"
+
+  # ProveIT Enterprise B namespace (Cappy Hour Inc - Beverage Mfg)
+  - uri: "urn:proveit:enterprise-b"
+    displayName: "Enterprise B - Beverage Manufacturing"
+
+  # ProveIT Enterprise C namespace (Point Three Therapeutics - Biopharma)
+  - uri: "urn:proveit:enterprise-c"
+    displayName: "Enterprise C - Biopharmaceutical Manufacturing"
+
+  # abelara UNS namespace (Cappy Hour Inc via abelara)
+  - uri: "urn:proveit:abelara"
+    displayName: "abelara - Cappy Hour Inc UNS"
+
+  # fuuz i3X-native namespace
+  - uri: "urn:proveit:fuuz"
+    displayName: "fuuz - Bio Manufacturing Telemetry"
+
+  # resevo demo namespace
+  - uri: "urn:proveit:resevo"
+    displayName: "resevo - Integration Demo"
 
   # ProveIT shared types namespace
   - uri: "urn:proveit:types"
@@ -247,6 +271,204 @@ objectTypes:
       type: "object"
       properties:
         value: { type: "number" }
+
+  # ---------------------------------------------------------------------------
+  # Beverage Manufacturing Equipment Types (Enterprise B / abelara)
+  # ---------------------------------------------------------------------------
+  - elementId: "CapLoader"
+    displayName: "Cap Loader"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        machineSpeed: { type: "number" }
+
+  - elementId: "Filler"
+    displayName: "Filler"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        fillRate: { type: "number" }
+
+  - elementId: "Washer"
+    displayName: "Washer"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+
+  - elementId: "Labeler"
+    displayName: "Labeler"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+
+  - elementId: "Packager"
+    displayName: "Packager"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+
+  - elementId: "Sealer"
+    displayName: "Sealer"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+
+  - elementId: "Tank"
+    displayName: "Tank"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        level: { type: "number" }
+        temperature: { type: "number" }
+
+  - elementId: "Vat"
+    displayName: "Vat"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+
+  - elementId: "Robot"
+    displayName: "Robot"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+
+  - elementId: "Wrapper"
+    displayName: "Wrapper"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+
+  - elementId: "Workstation"
+    displayName: "Workstation"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+
+  # ---------------------------------------------------------------------------
+  # Biopharmaceutical Equipment Types (Enterprise C)
+  # ---------------------------------------------------------------------------
+  - elementId: "Bioreactor"
+    displayName: "Bioreactor"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        temperature: { type: "number" }
+        pH: { type: "number" }
+        dissolvedOxygen: { type: "number" }
+
+  - elementId: "Chromatography"
+    displayName: "Chromatography System"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        flowRate: { type: "number" }
+        pressure: { type: "number" }
+
+  - elementId: "Mixer"
+    displayName: "Mixer"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        agitatorSpeed: { type: "number" }
+        temperature: { type: "number" }
+
+  - elementId: "TFFSystem"
+    displayName: "Tangential Flow Filtration"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        transmembranePressure: { type: "number" }
+        flowRate: { type: "number" }
+
+  - elementId: "ProcessInstrument"
+    displayName: "Process Instrument"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        value: { type: "number" }
+        unit: { type: "string" }
+
+  - elementId: "EnvironmentalSensor"
+    displayName: "Environmental Sensor"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        value: { type: "number" }
+
+  - elementId: "BatchAnalytics"
+    displayName: "Batch Analytics"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+
+  # ---------------------------------------------------------------------------
+  # KPI Type (shared across enterprises)
+  # ---------------------------------------------------------------------------
+  - elementId: "KPI"
+    displayName: "Key Performance Indicator"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        value: { type: "number" }
+        unitsOfMeasure: { type: "string" }
+        formula: { type: "string" }
+
+  # ---------------------------------------------------------------------------
+  # Work Order Type (SM Profile - eukodyne)
+  # ---------------------------------------------------------------------------
+  - elementId: "WorkOrder"
+    displayName: "Work Order"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        workOrderId: { type: "string" }
+        workOrderNumber: { type: "number" }
+        productName: { type: "string" }
+        lotNumber: { type: "string" }
+        quantity: { type: "number" }
+
+  # ---------------------------------------------------------------------------
+  # CMMS Asset (MaintainX)
+  # ---------------------------------------------------------------------------
+  - elementId: "CMMSAsset"
+    displayName: "CMMS Asset"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        name: { type: "string" }
+        serialNumber: { type: "string" }
+        locationId: { type: "number" }
+
+  # ---------------------------------------------------------------------------
+  # Convenience Store / IoT (Opto22 EPIC)
+  # ---------------------------------------------------------------------------
+  - elementId: "ConvenienceStore"
+    displayName: "Convenience Store"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+
+  # ---------------------------------------------------------------------------
+  # i3X Native Telemetry Point (fuuz)
+  # ---------------------------------------------------------------------------
+  - elementId: "DataPointTelem"
+    displayName: "Telemetry Data Point"
+    namespaceUri: "urn:proveit:fuuz"
+    schema:
+      type: "object"
 
   # Generic tag for unclassified data
   - elementId: "GenericTag"
@@ -652,3 +874,691 @@ mappings:
     objectTypeId: "GenericTag"
     elementIdTemplate: "Enterprise A.{source}.{tag}"
     displayNameTemplate: "{tag}"
+
+  # ===========================================================================
+  # ENTERPRISE B: Beverage Manufacturing (Cappy Hour Inc)
+  # UNS hierarchy: Enterprise B/{source}/{site}/{area}/{line}/{equipment}/metric/{category}/{metric}
+  #
+  # Data sources:
+  #   Site{1,2,3}  - Core UNS scalar metrics
+  #   Metric       - Enterprise-level rollup metrics
+  #   Node         - Asset identity
+  #   eukodyne     - CESMII SM Profile work orders
+  #   flow         - Flow Software analytics
+  #   maintainx    - CMMS asset information
+  #   opto22       - EPIC convenience store IoT
+  #   roeslein     - OEE summaries (JSON-LD)
+  # ===========================================================================
+
+  # ---------------------------------------------------------------------------
+  # Enterprise B / eukodyne - CESMII WorkOrder SM Profile (JSON)
+  # ---------------------------------------------------------------------------
+  - id: "entb-eukodyne-workorder"
+    topicPattern: "Enterprise B/eukodyne/cesmii/WorkOrder"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "WorkOrder"
+    elementIdTemplate: "Enterprise B.eukodyne.WorkOrder"
+    displayNameTemplate: "Work Order"
+
+  # ---------------------------------------------------------------------------
+  # Enterprise B / roeslein - OEE JSON-LD summaries
+  # ---------------------------------------------------------------------------
+  - id: "entb-roeslein-oee"
+    topicPattern: "Enterprise B/roeslein/OEE/{site}/{line}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "OEE"
+    elementIdTemplate: "Enterprise B.roeslein.OEE.{site}.{line}"
+    displayNameTemplate: "Roeslein OEE {site} {line}"
+    valueExtractor: "$.overallOEE"
+
+  # ---------------------------------------------------------------------------
+  # Enterprise B / flow - Flow Software analytics (JSON)
+  # Topics: Enterprise B/flow/{site}/{area}/{line}/{equipment}/{measure}/{attr}/{attrvalue}
+  # ---------------------------------------------------------------------------
+  - id: "entb-flow-7"
+    topicPattern: "Enterprise B/flow/{site}/{a}/{b}/{c}/{d}/{e}/{f}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.flow.{site}.{a}.{b}.{c}.{d}.{e}.{f}"
+    displayNameTemplate: "Flow {d} {f}"
+    valueExtractor: "$.dataPoint.value"
+    qualityExtractor: "$.dataPoint.quality"
+
+  - id: "entb-flow-5"
+    topicPattern: "Enterprise B/flow/{site}/{a}/{b}/{c}/{d}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.flow.{site}.{a}.{b}.{c}.{d}"
+    displayNameTemplate: "Flow {c} {d}"
+    valueExtractor: "$.dataPoint.value"
+    qualityExtractor: "$.dataPoint.quality"
+
+  - id: "entb-flow-3"
+    topicPattern: "Enterprise B/flow/{site}/{a}/{b}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.flow.{site}.{a}.{b}"
+    displayNameTemplate: "Flow {a} {b}"
+    valueExtractor: "$.dataPoint.value"
+    qualityExtractor: "$.dataPoint.quality"
+
+  # ---------------------------------------------------------------------------
+  # Enterprise B / maintainx - CMMS asset info (JSON)
+  # Topics: Enterprise B/maintainx/Site {N}/{area}/{line}/{equipment}/Asset Info
+  # ---------------------------------------------------------------------------
+  - id: "entb-maintainx-6"
+    topicPattern: "Enterprise B/maintainx/{site}/{area}/{line}/{equipment}/{info}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "CMMSAsset"
+    elementIdTemplate: "Enterprise B.maintainx.{site}.{area}.{line}.{equipment}.{info}"
+    displayNameTemplate: "MaintainX {equipment} {info}"
+
+  - id: "entb-maintainx-4"
+    topicPattern: "Enterprise B/maintainx/{site}/{area}/{line}/{info}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "CMMSAsset"
+    elementIdTemplate: "Enterprise B.maintainx.{site}.{area}.{line}.{info}"
+    displayNameTemplate: "MaintainX {line} {info}"
+
+  - id: "entb-maintainx-2"
+    topicPattern: "Enterprise B/maintainx/{site}/{info}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "CMMSAsset"
+    elementIdTemplate: "Enterprise B.maintainx.{site}.{info}"
+    displayNameTemplate: "MaintainX {site} {info}"
+
+  # ---------------------------------------------------------------------------
+  # Enterprise B / opto22 - Convenience store IoT (JSON)
+  # Topics: Enterprise B/opto22/EPIC CStore {id}/{datapoint}
+  # ---------------------------------------------------------------------------
+  - id: "entb-opto22-store"
+    topicPattern: "Enterprise B/opto22/{store}/{datapoint}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "ConvenienceStore"
+    elementIdTemplate: "Enterprise B.opto22.{store}.{datapoint}"
+    displayNameTemplate: "{store} {datapoint}"
+    valueExtractor: "$.value"
+    timestampExtractor: "$.timestamp"
+
+  # ---------------------------------------------------------------------------
+  # Enterprise B / Core UNS - Scalar metrics per site
+  # Topics: Enterprise B/Site{N}/{area}/{line}/{equipment}/metric/{category}/{metric}
+  # Payloads are bare scalars (number or string), codec: utf8
+  # ---------------------------------------------------------------------------
+
+  # Deep metric paths (7 segments): Site/area/line/equipment/metric/category/metric
+  - id: "entb-site-metric-deep"
+    topicPattern: "Enterprise B/{site}/{area}/{line}/{equipment}/metric/{category}/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.{site}.{area}.{line}.{equipment}.{category}.{metric}"
+    displayNameTemplate: "{equipment} {metric}"
+
+  # Equipment-level metric (6 segments): Site/area/line/equipment/metric/metric
+  - id: "entb-site-metric-equip"
+    topicPattern: "Enterprise B/{site}/{area}/{line}/{equipment}/metric/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.{site}.{area}.{line}.{equipment}.{metric}"
+    displayNameTemplate: "{equipment} {metric}"
+
+  # Enterprise-level rollup metrics
+  - id: "entb-metric-deep"
+    topicPattern: "Enterprise B/Metric/{category}/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.Metric.{category}.{metric}"
+    displayNameTemplate: "Metric {category} {metric}"
+
+  - id: "entb-metric"
+    topicPattern: "Enterprise B/Metric/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.Metric.{metric}"
+    displayNameTemplate: "Metric {metric}"
+
+  # Node identity
+  - id: "entb-node"
+    topicPattern: "Enterprise B/Node/{attr}"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.Node.{attr}"
+    displayNameTemplate: "Node {attr}"
+
+  # Metadata
+  - id: "entb-metadata"
+    topicPattern: "Enterprise B/metadata"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.metadata"
+    displayNameTemplate: "Metadata"
+
+  # resevo integration within Enterprise B
+  - id: "entb-resevo"
+    topicPattern: "Enterprise B/resevo/{tag}"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.resevo.{tag}"
+    displayNameTemplate: "resevo {tag}"
+
+  # Fallback: any remaining Enterprise B topics
+  - id: "entb-fallback-deep"
+    topicPattern: "Enterprise B/{a}/{b}/{c}/{d}/{e}/{f}/{g}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.{a}.{b}.{c}.{d}.{e}.{f}.{g}"
+    displayNameTemplate: "{g}"
+
+  - id: "entb-fallback-6"
+    topicPattern: "Enterprise B/{a}/{b}/{c}/{d}/{e}/{f}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.{a}.{b}.{c}.{d}.{e}.{f}"
+    displayNameTemplate: "{f}"
+
+  - id: "entb-fallback-5"
+    topicPattern: "Enterprise B/{a}/{b}/{c}/{d}/{e}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.{a}.{b}.{c}.{d}.{e}"
+    displayNameTemplate: "{e}"
+
+  - id: "entb-fallback-4"
+    topicPattern: "Enterprise B/{a}/{b}/{c}/{d}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.{a}.{b}.{c}.{d}"
+    displayNameTemplate: "{d}"
+
+  - id: "entb-fallback-3"
+    topicPattern: "Enterprise B/{a}/{b}/{c}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.{a}.{b}.{c}"
+    displayNameTemplate: "{c}"
+
+  - id: "entb-fallback-2"
+    topicPattern: "Enterprise B/{a}/{b}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-b"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise B.{a}.{b}"
+    displayNameTemplate: "{b}"
+
+  # ===========================================================================
+  # ENTERPRISE C: Biopharmaceutical Manufacturing (Point Three Therapeutics)
+  #
+  # Data sources:
+  #   aveva       - AVEVA structured process data (JSON with VQT)
+  #   sub/chrom/sum/tff - Flat PLC tags (bare scalars)
+  #   sepasoft    - Batch analytics (JSON arrays)
+  #   opto22      - Environmental monitoring
+  #   maintainx   - CMMS
+  # ===========================================================================
+
+  # ---------------------------------------------------------------------------
+  # Enterprise C / AVEVA structured process data
+  # Topics: Enterprise C/aveva/{processType}/{unitId}/{category}/{instrumentId}/{property}
+  # Payload: { "quality": "Good", "timestamp": "...", "value": N, "unit": "..." }
+  # ---------------------------------------------------------------------------
+  - id: "entc-aveva-deep"
+    topicPattern: "Enterprise C/aveva/{processType}/{unitId}/{category}/{instrumentId}/{property}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "ProcessInstrument"
+    elementIdTemplate: "Enterprise C.aveva.{processType}.{unitId}.{category}.{instrumentId}.{property}"
+    displayNameTemplate: "{instrumentId} {property}"
+    valueExtractor: "$.value"
+    timestampExtractor: "$.timestamp"
+    qualityExtractor: "$.quality"
+
+  # AVEVA anomaly detection
+  - id: "entc-aveva-anomaly"
+    topicPattern: "Enterprise C/aveva/{processType}/{unitId}/{category}/{instrumentId}/anomaly"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise C.aveva.{processType}.{unitId}.{category}.{instrumentId}.anomaly"
+    displayNameTemplate: "{instrumentId} Anomaly"
+
+  # AVEVA 4-segment (unit-level properties)
+  - id: "entc-aveva-unit"
+    topicPattern: "Enterprise C/aveva/{processType}/{unitId}/{category}/{property}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "ProcessInstrument"
+    elementIdTemplate: "Enterprise C.aveva.{processType}.{unitId}.{category}.{property}"
+    displayNameTemplate: "{unitId} {property}"
+    valueExtractor: "$.value"
+    timestampExtractor: "$.timestamp"
+    qualityExtractor: "$.quality"
+
+  # AVEVA 3-segment
+  - id: "entc-aveva-3"
+    topicPattern: "Enterprise C/aveva/{processType}/{unitId}/{property}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "ProcessInstrument"
+    elementIdTemplate: "Enterprise C.aveva.{processType}.{unitId}.{property}"
+    displayNameTemplate: "{unitId} {property}"
+    valueExtractor: "$.value"
+    timestampExtractor: "$.timestamp"
+    qualityExtractor: "$.quality"
+
+  # ---------------------------------------------------------------------------
+  # Enterprise C / Flat PLC tags (bare scalar payloads)
+  # Topics: Enterprise C/{source}/{tagName}
+  # ---------------------------------------------------------------------------
+  - id: "entc-sub-tags"
+    topicPattern: "Enterprise C/sub/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "ProcessInstrument"
+    elementIdTemplate: "Enterprise C.sub.{tag}"
+    displayNameTemplate: "SUB250 {tag}"
+
+  - id: "entc-chrom-tags"
+    topicPattern: "Enterprise C/chrom/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "ProcessInstrument"
+    elementIdTemplate: "Enterprise C.chrom.{tag}"
+    displayNameTemplate: "CHR01 {tag}"
+
+  - id: "entc-sum-tags"
+    topicPattern: "Enterprise C/sum/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "ProcessInstrument"
+    elementIdTemplate: "Enterprise C.sum.{tag}"
+    displayNameTemplate: "SUM500 {tag}"
+
+  - id: "entc-tff-tags"
+    topicPattern: "Enterprise C/tff/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "ProcessInstrument"
+    elementIdTemplate: "Enterprise C.tff.{tag}"
+    displayNameTemplate: "TFF300 {tag}"
+
+  # ---------------------------------------------------------------------------
+  # Enterprise C / Sepasoft batch analytics (JSON arrays)
+  # ---------------------------------------------------------------------------
+  - id: "entc-sepasoft"
+    topicPattern: "Enterprise C/sepasoft/{report}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "BatchAnalytics"
+    elementIdTemplate: "Enterprise C.sepasoft.{report}"
+    displayNameTemplate: "Sepasoft {report}"
+
+  # ---------------------------------------------------------------------------
+  # Enterprise C / Opto22 environmental monitoring
+  # ---------------------------------------------------------------------------
+  - id: "entc-opto22-env-deep"
+    topicPattern: "Enterprise C/opto22/Environmental Zones/{zone}/{sensor}/{property}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "EnvironmentalSensor"
+    elementIdTemplate: "Enterprise C.opto22.Environmental Zones.{zone}.{sensor}.{property}"
+    displayNameTemplate: "{zone} {sensor} {property}"
+
+  - id: "entc-opto22-env"
+    topicPattern: "Enterprise C/opto22/Environmental Zones/{zone}/{sensor}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "EnvironmentalSensor"
+    elementIdTemplate: "Enterprise C.opto22.Environmental Zones.{zone}.{sensor}"
+    displayNameTemplate: "{zone} {sensor}"
+
+  # Enterprise C / MaintainX
+  - id: "entc-maintainx"
+    topicPattern: "Enterprise C/maintainx/{info}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "CMMSAsset"
+    elementIdTemplate: "Enterprise C.maintainx.{info}"
+    displayNameTemplate: "MaintainX {info}"
+
+  # Enterprise C metadata
+  - id: "entc-metadata"
+    topicPattern: "Enterprise C/metadata"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise C.metadata"
+    displayNameTemplate: "Metadata"
+
+  # Enterprise C fallbacks
+  - id: "entc-fallback-5"
+    topicPattern: "Enterprise C/{a}/{b}/{c}/{d}/{e}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise C.{a}.{b}.{c}.{d}.{e}"
+    displayNameTemplate: "{e}"
+
+  - id: "entc-fallback-4"
+    topicPattern: "Enterprise C/{a}/{b}/{c}/{d}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise C.{a}.{b}.{c}.{d}"
+    displayNameTemplate: "{d}"
+
+  - id: "entc-fallback-3"
+    topicPattern: "Enterprise C/{a}/{b}/{c}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise C.{a}.{b}.{c}"
+    displayNameTemplate: "{c}"
+
+  - id: "entc-fallback-2"
+    topicPattern: "Enterprise C/{a}/{b}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-c"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise C.{a}.{b}"
+    displayNameTemplate: "{b}"
+
+  # ===========================================================================
+  # ABELARA: Cappy Hour Inc via abelara UNS
+  # Hierarchy: abelara/{enterprise}/{site}/{area}/{line}/{equipment}/{datapoint}
+  #
+  # Payloads: JSON with _model, _name, _path, timestamp, value (nested)
+  # ===========================================================================
+
+  # ---------------------------------------------------------------------------
+  # abelara / KPI values
+  # Topics: abelara/.../kpis/{kpiName}
+  # ---------------------------------------------------------------------------
+  - id: "abelara-kpi"
+    topicPattern: "abelara/{enterprise}/{site}/{area}/{line}/{equipment}/kpis/{kpi}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "KPI"
+    elementIdTemplate: "abelara.{enterprise}.{site}.{area}.{line}.{equipment}.kpis.{kpi}"
+    displayNameTemplate: "{equipment} {kpi}"
+    valueExtractor: "$.value.Value"
+    timestampExtractor: "$.timestamp"
+
+  # ---------------------------------------------------------------------------
+  # abelara / Machine state
+  # ---------------------------------------------------------------------------
+  - id: "abelara-state"
+    topicPattern: "abelara/{enterprise}/{site}/{area}/{line}/{equipment}/state"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "MachineryItemState"
+    elementIdTemplate: "abelara.{enterprise}.{site}.{area}.{line}.{equipment}.state"
+    displayNameTemplate: "{equipment} State"
+    valueExtractor: "$.value"
+    timestampExtractor: "$.timestamp"
+
+  # ---------------------------------------------------------------------------
+  # abelara / Machine Identification (OPC UA Machinery)
+  # ---------------------------------------------------------------------------
+  - id: "abelara-machid"
+    topicPattern: "abelara/{enterprise}/{site}/{area}/{line}/{equipment}/MachineIdentification"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "MachineIdentificationType"
+    elementIdTemplate: "abelara.{enterprise}.{site}.{area}.{line}.{equipment}.MachineIdentification"
+    displayNameTemplate: "{equipment} ID"
+    timestampExtractor: "$.timestamp"
+
+  # ---------------------------------------------------------------------------
+  # abelara / Counts, material, production runs
+  # ---------------------------------------------------------------------------
+  - id: "abelara-equip-data"
+    topicPattern: "abelara/{enterprise}/{site}/{area}/{line}/{equipment}/{datapoint}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.{enterprise}.{site}.{area}.{line}.{equipment}.{datapoint}"
+    displayNameTemplate: "{equipment} {datapoint}"
+    timestampExtractor: "$.timestamp"
+
+  # ---------------------------------------------------------------------------
+  # abelara / UNS v1 individual tags (Data/Source envelope)
+  # Payload: { "Data": { "Quality": "...", "Value": X, "Timestamp": "..." }, "Source": {...} }
+  # ---------------------------------------------------------------------------
+  # UNS v1 deep (8+ segment topics)
+  - id: "abelara-uns-v1-8"
+    topicPattern: "abelara/uns-v1/{ent}/{site}/{area}/{line}/{equip}/{cat}/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.uns-v1.{ent}.{site}.{area}.{line}.{equip}.{cat}.{tag}"
+    displayNameTemplate: "{equip} {tag}"
+    valueExtractor: "$.Data.Value"
+    timestampExtractor: "$.Data.Timestamp"
+    qualityExtractor: "$.Data.Quality"
+
+  - id: "abelara-uns-v1-7"
+    topicPattern: "abelara/uns-v1/{ent}/{site}/{area}/{line}/{equip}/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.uns-v1.{ent}.{site}.{area}.{line}.{equip}.{tag}"
+    displayNameTemplate: "{equip} {tag}"
+    valueExtractor: "$.Data.Value"
+    timestampExtractor: "$.Data.Timestamp"
+    qualityExtractor: "$.Data.Quality"
+
+  - id: "abelara-uns-v1-5"
+    topicPattern: "abelara/uns-v1/{ent}/{site}/{area}/{line}/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.uns-v1.{ent}.{site}.{area}.{line}.{tag}"
+    displayNameTemplate: "UNS v1 {tag}"
+    valueExtractor: "$.Data.Value"
+    timestampExtractor: "$.Data.Timestamp"
+    qualityExtractor: "$.Data.Quality"
+
+  - id: "abelara-uns-v1-3"
+    topicPattern: "abelara/uns-v1/{a}/{b}/{c}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.uns-v1.{a}.{b}.{c}"
+    displayNameTemplate: "UNS v1 {c}"
+    valueExtractor: "$.Data.Value"
+    timestampExtractor: "$.Data.Timestamp"
+    qualityExtractor: "$.Data.Quality"
+
+  # ---------------------------------------------------------------------------
+  # abelara / UNS v2
+  # ---------------------------------------------------------------------------
+  - id: "abelara-uns-v2-8"
+    topicPattern: "abelara/uns-v2/{ent}/{site}/{area}/{line}/{equip}/{cat}/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.uns-v2.{ent}.{site}.{area}.{line}.{equip}.{cat}.{tag}"
+    displayNameTemplate: "{equip} {tag}"
+    valueExtractor: "$.Data.Value"
+    timestampExtractor: "$.Data.Timestamp"
+    qualityExtractor: "$.Data.Quality"
+
+  - id: "abelara-uns-v2-7"
+    topicPattern: "abelara/uns-v2/{ent}/{site}/{area}/{line}/{equip}/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.uns-v2.{ent}.{site}.{area}.{line}.{equip}.{tag}"
+    displayNameTemplate: "{equip} {tag}"
+    valueExtractor: "$.Data.Value"
+    timestampExtractor: "$.Data.Timestamp"
+    qualityExtractor: "$.Data.Quality"
+
+  - id: "abelara-uns-v2-5"
+    topicPattern: "abelara/uns-v2/{ent}/{site}/{area}/{line}/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.uns-v2.{ent}.{site}.{area}.{line}.{tag}"
+    displayNameTemplate: "UNS v2 {tag}"
+    valueExtractor: "$.Data.Value"
+    timestampExtractor: "$.Data.Timestamp"
+    qualityExtractor: "$.Data.Quality"
+
+  - id: "abelara-uns-v2-3"
+    topicPattern: "abelara/uns-v2/{a}/{b}/{c}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.uns-v2.{a}.{b}.{c}"
+    displayNameTemplate: "UNS v2 {c}"
+    valueExtractor: "$.Data.Value"
+    timestampExtractor: "$.Data.Timestamp"
+    qualityExtractor: "$.Data.Quality"
+
+  # ---------------------------------------------------------------------------
+  # abelara / Infrastructure (Ignition gateways)
+  # ---------------------------------------------------------------------------
+  - id: "abelara-infra-4"
+    topicPattern: "abelara/infrastructure/{gateway}/{a}/{b}/{c}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.infrastructure.{gateway}.{a}.{b}.{c}"
+    displayNameTemplate: "Infra {gateway} {c}"
+
+  - id: "abelara-infra-3"
+    topicPattern: "abelara/infrastructure/{gateway}/{a}/{b}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.infrastructure.{gateway}.{a}.{b}"
+    displayNameTemplate: "Infra {gateway} {b}"
+
+  - id: "abelara-infra-2"
+    topicPattern: "abelara/infrastructure/{gateway}/{a}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.infrastructure.{gateway}.{a}"
+    displayNameTemplate: "Infra {gateway} {a}"
+
+  # abelara fallbacks
+  - id: "abelara-fallback-5"
+    topicPattern: "abelara/{a}/{b}/{c}/{d}/{e}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.{a}.{b}.{c}.{d}.{e}"
+    displayNameTemplate: "{e}"
+
+  - id: "abelara-fallback-4"
+    topicPattern: "abelara/{a}/{b}/{c}/{d}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.{a}.{b}.{c}.{d}"
+    displayNameTemplate: "{d}"
+
+  - id: "abelara-fallback-3"
+    topicPattern: "abelara/{a}/{b}/{c}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.{a}.{b}.{c}"
+    displayNameTemplate: "{c}"
+
+  - id: "abelara-fallback-2"
+    topicPattern: "abelara/{a}/{b}"
+    codec: "json"
+    namespaceUri: "urn:proveit:abelara"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "abelara.{a}.{b}"
+    displayNameTemplate: "{b}"
+
+  # ===========================================================================
+  # FUUZ: i3X-native bio manufacturing telemetry
+  # Hierarchy: fuuz/Enterprise C/{facility}/{site}/{line}/{bay}/{equipment}/{category}/{tag}
+  #
+  # Payload is already i3X-native:
+  #   { elementId, displayName, typeId, parentId, hasChildren, value: { value, quality, ... } }
+  # ===========================================================================
+  # 9-segment: fuuz/Enterprise C/facility/site/line/bay/equipment/category/tag
+  - id: "fuuz-telemetry-9"
+    topicPattern: "fuuz/{ent}/{facility}/{site}/{line}/{bay}/{equipment}/{category}/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:fuuz"
+    objectTypeId: "DataPointTelem"
+    elementIdTemplate: "fuuz.{ent}.{facility}.{site}.{line}.{bay}.{equipment}.{category}.{tag}"
+    displayNameTemplate: "{equipment} {tag}"
+    valueExtractor: "$.value.value"
+    timestampExtractor: "$.value.recordedAt"
+    qualityExtractor: "$.quality"
+
+  # Fallbacks for shorter fuuz paths
+  - id: "fuuz-telemetry-7"
+    topicPattern: "fuuz/{ent}/{facility}/{site}/{line}/{bay}/{equipment}/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:fuuz"
+    objectTypeId: "DataPointTelem"
+    elementIdTemplate: "fuuz.{ent}.{facility}.{site}.{line}.{bay}.{equipment}.{tag}"
+    displayNameTemplate: "{equipment} {tag}"
+    valueExtractor: "$.value.value"
+    timestampExtractor: "$.value.recordedAt"
+    qualityExtractor: "$.quality"
+
+  - id: "fuuz-telemetry-5"
+    topicPattern: "fuuz/{ent}/{facility}/{site}/{line}/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:fuuz"
+    objectTypeId: "DataPointTelem"
+    elementIdTemplate: "fuuz.{ent}.{facility}.{site}.{line}.{tag}"
+    displayNameTemplate: "fuuz {tag}"
+    valueExtractor: "$.value.value"
+    timestampExtractor: "$.value.recordedAt"
+    qualityExtractor: "$.quality"
+
+  - id: "fuuz-telemetry-3"
+    topicPattern: "fuuz/{a}/{b}/{c}"
+    codec: "json"
+    namespaceUri: "urn:proveit:fuuz"
+    objectTypeId: "DataPointTelem"
+    elementIdTemplate: "fuuz.{a}.{b}.{c}"
+    displayNameTemplate: "fuuz {c}"
+    valueExtractor: "$.value.value"
+    timestampExtractor: "$.value.recordedAt"
+    qualityExtractor: "$.quality"
+
+  # ===========================================================================
+  # RESEVO: Simple demo/integration values
+  # Topics: resevo/value1, resevo/value2, resevo/value3
+  # Payloads: bare strings ("strawberry", "banana", "mango")
+  # ===========================================================================
+  - id: "resevo-values"
+    topicPattern: "resevo/{tag}"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:resevo"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "resevo.{tag}"
+    displayNameTemplate: "resevo {tag}"
