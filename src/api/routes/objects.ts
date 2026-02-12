@@ -37,15 +37,18 @@ export async function registerObjectsRoutes(
         instances = store.getAllInstances();
       }
 
-      return instances.map((inst) => ({
-        elementId: inst.elementId,
-        displayName: inst.displayName,
-        typeId: inst.typeId,
-        parentId: store.getParentId(inst.elementId),
-        hasChildren: store.hasChildren(inst.elementId),
-        isComposition: inst.isComposition,
-        namespaceUri: inst.namespaceUri,
-      }));
+      return instances.map((inst) => {
+        const children = store.hasChildren(inst.elementId);
+        return {
+          elementId: inst.elementId,
+          displayName: inst.displayName,
+          typeId: inst.typeId,
+          parentId: store.getParentId(inst.elementId),
+          hasChildren: children,
+          isComposition: children,
+          namespaceUri: inst.namespaceUri,
+        };
+      });
     }
   );
 
@@ -61,15 +64,18 @@ export async function registerObjectsRoutes(
 
       const instances = store.getInstances(elementIds);
 
-      return instances.map((inst) => ({
-        elementId: inst.elementId,
-        displayName: inst.displayName,
-        typeId: inst.typeId,
-        parentId: store.getParentId(inst.elementId),
-        hasChildren: store.hasChildren(inst.elementId),
-        isComposition: inst.isComposition,
-        namespaceUri: inst.namespaceUri,
-      }));
+      return instances.map((inst) => {
+        const children = store.hasChildren(inst.elementId);
+        return {
+          elementId: inst.elementId,
+          displayName: inst.displayName,
+          typeId: inst.typeId,
+          parentId: store.getParentId(inst.elementId),
+          hasChildren: children,
+          isComposition: children,
+          namespaceUri: inst.namespaceUri,
+        };
+      });
     }
   );
 
@@ -99,17 +105,18 @@ export async function registerObjectsRoutes(
           const inst = store.getInstance(targetId);
           if (!inst) return null;
 
+          const children = store.hasChildren(inst.elementId);
           const obj: Record<string, unknown> = {
             elementId: inst.elementId,
             displayName: inst.displayName,
             parentId: store.getParentId(inst.elementId),
-            hasChildren: store.hasChildren(inst.elementId),
+            hasChildren: children,
             namespaceUri: inst.namespaceUri,
           };
 
           if (includeMetadata) {
             obj.typeId = inst.typeId;
-            obj.isComposition = inst.isComposition;
+            obj.isComposition = children;
           }
 
           return obj;
