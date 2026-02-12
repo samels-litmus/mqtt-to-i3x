@@ -1,5 +1,15 @@
+# =============================================================================
 # i3x-via-mqtt Configuration File
-# This file configures the MQTT-to-i3x bridge
+# CESMII SM Profile Configuration for Enterprise A Glass Container Manufacturing
+#
+# Models Enterprise A (Dallas) as a VDMA 40001-1 Machine Identification hierarchy
+# with live process values from both "Dallas" (summary/description) and "aveva"
+# (real-time SCADA) data sources.
+#
+# SM Profile hierarchy:
+#   Enterprise > Site > Line > Area > Equipment (MachineIdentificationType)
+#     └── Status/Production/State values (composition children)
+# =============================================================================
 
 # =============================================================================
 # Server Configuration
@@ -10,19 +20,14 @@ server:
   #tls:
   #  key: "i3x-testing-20260203.key"
   #  cert: "i3x-testing-20260203.crt"
-  # Uncomment for HTTPS:
-  # tls:
-  #   key: "/path/to/server.key"
-  #   cert: "/path/to/server.crt"
-  #   ca: "/path/to/ca.crt"  # Optional
 
 # =============================================================================
 # Authentication
 # =============================================================================
 auth:
-  enabled: false  # Set to true to require API key authentication
+  enabled: false
   apiKeys:
-    - "" # Add valid API keys here
+    - ""
 
 # =============================================================================
 # MQTT Broker Connection
@@ -31,7 +36,7 @@ mqtt:
   brokerUrl: "mqtt://virtualfactory.proveit.services:1883"
   username: "proveitreadonly"
   password: "proveitreadonlypassword"
-  clientId: "i3x-server"  # Will be suffixed with timestamp
+  clientId: "i3x-server"
   clean: true
   keepalive: 60
   reconnectPeriod: 5000
@@ -39,237 +44,611 @@ mqtt:
 
 # =============================================================================
 # Namespaces
-# Define the i3x namespaces for organizing objects
+# Aligned with CESMII SM Profile namespace conventions
 # =============================================================================
 namespaces:
+  # OPC UA Machinery namespace (VDMA 40001-1)
+  - uri: "urn:vdma.org:OpcUaMachinery"
+    displayName: "OPC UA Machinery"
+
+  # ProveIT Enterprise A namespace
   - uri: "urn:proveit:enterprise-a"
-    displayName: "Enterprise A"
+    displayName: "Enterprise A - Glass Manufacturing"
 
-  - uri: "urn:proveit:enterprise-b"
-    displayName: "Enterprise B"
-
-  - uri: "urn:proveit:enterprise-c"
-    displayName: "Enterprise C"
-
-  - uri: "urn:proveit:default"
-    displayName: "Default Namespace"
+  # ProveIT shared types namespace
+  - uri: "urn:proveit:types"
+    displayName: "ProveIT Types"
 
 # =============================================================================
 # Object Types
-# Define the types of industrial objects we're tracking
+# Based on CESMII SM Profiles and VDMA 40001-1 OPC UA for Machinery
 # =============================================================================
 objectTypes:
-  # Temperature sensors
-  - elementId: "TemperatureSensor"
-    displayName: "Temperature Sensor"
-    namespaceUri: "urn:proveit:default"
+  # ---------------------------------------------------------------------------
+  # VDMA 40001-1: Machine Identification Type
+  # Base type for all identifiable machinery items
+  # Ref: https://reference.opcfoundation.org/Machinery/v103/docs/5.1
+  # ---------------------------------------------------------------------------
+  - elementId: "MachineIdentificationType"
+    displayName: "Machine Identification Type"
+    namespaceUri: "urn:vdma.org:OpcUaMachinery"
+    schema:
+      type: "object"
+      properties:
+        manufacturer: { type: "string", description: "Name of the manufacturer" }
+        serialNumber: { type: "string", description: "Unique production number" }
+        productInstanceUri: { type: "string", format: "uri", description: "Globally unique machine identifier" }
+        model: { type: "string", description: "Machine model designation" }
+        assetId: { type: "string", description: "Customer-defined asset identifier" }
+        componentName: { type: "string", description: "Machine name in plant context" }
+        location: { type: "string", description: "Physical placement" }
+        deviceClass: { type: "string", description: "Industry classification" }
+      required: ["manufacturer", "serialNumber", "productInstanceUri"]
+
+  # ---------------------------------------------------------------------------
+  # ISA-95 Hierarchy Types
+  # ---------------------------------------------------------------------------
+  - elementId: "Enterprise"
+    displayName: "Enterprise"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        description: { type: "string" }
+
+  - elementId: "Site"
+    displayName: "Site"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        description: { type: "string" }
+        currentShift: { type: "string" }
+        operatingSchedule: { type: "string" }
+
+  - elementId: "ProductionLine"
+    displayName: "Production Line"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        description: { type: "string" }
+        ratedCapacity: { type: "number" }
+
+  - elementId: "Area"
+    displayName: "Area"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        description: { type: "string" }
+
+  # ---------------------------------------------------------------------------
+  # Glass Manufacturing Equipment Types (extend MachineIdentificationType)
+  # ---------------------------------------------------------------------------
+  - elementId: "StorageSilo"
+    displayName: "Storage Silo"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        level: { type: "number", description: "Fill level percentage" }
+        material: { type: "string", description: "Stored material name" }
+
+  - elementId: "BatchMixer"
+    displayName: "Batch Mixer"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        batchWeight: { type: "number", description: "Current batch weight (lbs)" }
+        feedRate: { type: "number", description: "Feed rate" }
+
+  - elementId: "BatchCharger"
+    displayName: "Batch Charger"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        feedRate: { type: "number", description: "Feed rate (lbs/min)" }
+
+  - elementId: "GlassFurnace"
+    displayName: "Glass Furnace"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        temperature: { type: "number", description: "Furnace temperature (F)" }
+        glassLevel: { type: "number", description: "Glass level percentage" }
+
+  - elementId: "Forehearth"
+    displayName: "Forehearth"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        temperature: { type: "number", description: "Forehearth temperature (F)" }
+        gobTemp: { type: "number", description: "Gob temperature (F)" }
+
+  - elementId: "ISMachine"
+    displayName: "IS Machine"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        machineSpeed: { type: "number", description: "Machine speed (cpm)" }
+        sectionsActive: { type: "integer", description: "Active sections" }
+
+  - elementId: "AnnealingLehr"
+    displayName: "Annealing Lehr"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        beltSpeed: { type: "number", description: "Belt speed (fpm)" }
+        zoneTemp1: { type: "number", description: "Hot zone temp (F)" }
+        zoneTemp2: { type: "number", description: "Cooling zone temp (F)" }
+        zoneTemp3: { type: "number", description: "Cold zone temp (F)" }
+
+  - elementId: "VisionInspector"
+    displayName: "Vision Inspector"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        totalInspected: { type: "number" }
+        passCount: { type: "number" }
+        rejectCount: { type: "number" }
+
+  - elementId: "Palletizer"
+    displayName: "Palletizer"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        palletsCompleted: { type: "number" }
+        containersPerPallet: { type: "number" }
+
+  # ---------------------------------------------------------------------------
+  # OEE (Overall Equipment Effectiveness) Type
+  # ---------------------------------------------------------------------------
+  - elementId: "OEE"
+    displayName: "Overall Equipment Effectiveness"
+    namespaceUri: "urn:proveit:types"
+    schema:
+      type: "object"
+      properties:
+        availability: { type: "number" }
+        performance: { type: "number" }
+        quality: { type: "number" }
+        goodCount: { type: "number" }
+        infeed: { type: "number" }
+        outfeed: { type: "number" }
+
+  # ---------------------------------------------------------------------------
+  # Machinery Item State (VDMA state machine concept)
+  # ---------------------------------------------------------------------------
+  - elementId: "MachineryItemState"
+    displayName: "Machinery Item State"
+    namespaceUri: "urn:vdma.org:OpcUaMachinery"
+    schema:
+      type: "object"
+      properties:
+        stateCurrent: { type: "number", description: "Current state enum (0=NotAvailable, 1=OutOfService, 2=NotExecuting, 3=Executing)" }
+        stateReason: { type: "string", description: "Reason for current state" }
+
+  # ---------------------------------------------------------------------------
+  # Edge/Raw Sensor Value Type
+  # ---------------------------------------------------------------------------
+  - elementId: "EdgeSensorValue"
+    displayName: "Edge Sensor Value"
+    namespaceUri: "urn:proveit:types"
     schema:
       type: "object"
       properties:
         value: { type: "number" }
-        unit: { type: "string", enum: ["celsius", "fahrenheit"] }
-
-  # Flow sensors
-  - elementId: "FlowSensor"
-    displayName: "Flow Sensor"
-    namespaceUri: "urn:proveit:default"
-    schema:
-      type: "object"
-      properties:
-        value: { type: "number" }
-        unit: { type: "string", enum: ["gpm", "lpm"] }
-
-  # Pressure sensors
-  - elementId: "PressureSensor"
-    displayName: "Pressure Sensor"
-    namespaceUri: "urn:proveit:default"
-    schema:
-      type: "object"
-      properties:
-        value: { type: "number" }
-        unit: { type: "string", enum: ["psi", "bar", "kpa"] }
-
-  # Level sensors
-  - elementId: "LevelSensor"
-    displayName: "Level Sensor"
-    namespaceUri: "urn:proveit:default"
-    schema:
-      type: "object"
-      properties:
-        value: { type: "number" }
-        unit: { type: "string", enum: ["percent", "meters"] }
-
-  # Pumps
-  - elementId: "Pump"
-    displayName: "Pump"
-    namespaceUri: "urn:proveit:default"
-    schema:
-      type: "object"
-      properties:
-        running: { type: "boolean" }
-        speed: { type: "number" }
-
-  # Valves
-  - elementId: "Valve"
-    displayName: "Valve"
-    namespaceUri: "urn:proveit:default"
-    schema:
-      type: "object"
-      properties:
-        position: { type: "number", minimum: 0, maximum: 100 }
-        open: { type: "boolean" }
-
-  # Motors
-  - elementId: "Motor"
-    displayName: "Motor"
-    namespaceUri: "urn:proveit:default"
-    schema:
-      type: "object"
-      properties:
-        running: { type: "boolean" }
-        rpm: { type: "number" }
-        current: { type: "number" }
 
   # Generic tag for unclassified data
   - elementId: "GenericTag"
     displayName: "Generic Tag"
-    namespaceUri: "urn:proveit:default"
+    namespaceUri: "urn:proveit:types"
     schema:
       type: "object"
 
 # =============================================================================
 # Mapping Rules
-# Define how MQTT topics map to i3x objects
+#
+# Ordered most-specific first (first match wins).
+#
+# The elementIdTemplate uses dots to create the ISA-95 hierarchy:
+#   Enterprise A.Dallas.Line 1.BatchHouse.Furnace.Status.Temperature
+#
+# The object store auto-creates parent placeholders and relationships.
 # =============================================================================
 mappings:
-  # ---------------------------------------------------------------------------
-  # Enterprise Three-Level Pattern: {enterprise}/{system}/{tag}
-  # Examples: "Enterprise A/sub/TI-100-001_PV_Celsius"
-  # ---------------------------------------------------------------------------
-  - id: "enterprise-three-level"
-    topicPattern: "{enterprise}/{system}/{tag}"
-    codec: "json"
-    namespaceUri: "urn:proveit:{enterprise}"
-    objectTypeId: "{system}"
-    elementIdTemplate: "{enterprise}.{system}.{tag}"
-    displayNameTemplate: "{tag}"
+
+  # ===========================================================================
+  # DALLAS SOURCE: Rich summary data with descriptions
+  # Pattern: Enterprise A/Dallas/{line}/{area}/{equipment}/{category}/{value}
+  # ===========================================================================
 
   # ---------------------------------------------------------------------------
-  # Enterprise Two-Level Pattern: {enterprise}/{tag}
-  # Examples: "Enterprise A/SomeDirectTag"
+  # Site-level metadata (Enterprise A/Dallas/Site/*)
   # ---------------------------------------------------------------------------
-  - id: "enterprise-two-level"
-    topicPattern: "{enterprise}/{tag}"
-    codec: "json"
-    namespaceUri: "urn:proveit:{enterprise}"
+  - id: "dallas-site-description"
+    topicPattern: "Enterprise A/Dallas/Site/Description"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "Site"
+    elementIdTemplate: "Enterprise A.Dallas"
+    displayNameTemplate: "Dallas"
+
+  - id: "dallas-site-shift"
+    topicPattern: "Enterprise A/Dallas/Site/CurrentShift"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "Site"
+    elementIdTemplate: "Enterprise A.Dallas.CurrentShift"
+    displayNameTemplate: "Current Shift"
+
+  - id: "dallas-site-datetime"
+    topicPattern: "Enterprise A/Dallas/Site/DateTime"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
     objectTypeId: "GenericTag"
-    elementIdTemplate: "{enterprise}.{tag}"
+    elementIdTemplate: "Enterprise A.Dallas.DateTime"
+    displayNameTemplate: "Date/Time"
+
+  - id: "dallas-site-localtime"
+    topicPattern: "Enterprise A/Dallas/Site/LocalTime"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.Dallas.LocalTime"
+    displayNameTemplate: "Local Time"
+
+  - id: "dallas-site-schedule"
+    topicPattern: "Enterprise A/Dallas/Site/OperatingSchedule"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.Dallas.OperatingSchedule"
+    displayNameTemplate: "Operating Schedule"
+
+  - id: "dallas-site-processflow"
+    topicPattern: "Enterprise A/Dallas/Site/ProcessFlow"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.Dallas.ProcessFlow"
+    displayNameTemplate: "Process Flow"
+
+  # ---------------------------------------------------------------------------
+  # Line-level description
+  # ---------------------------------------------------------------------------
+  - id: "dallas-line-description"
+    topicPattern: "Enterprise A/Dallas/Line 1/Description"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "ProductionLine"
+    elementIdTemplate: "Enterprise A.Dallas.Line 1"
+    displayNameTemplate: "Line 1"
+
+  # ---------------------------------------------------------------------------
+  # Equipment descriptions (MachineIdentificationType - componentName)
+  # These populate the identification/description for each equipment node
+  # ---------------------------------------------------------------------------
+  - id: "dallas-equipment-description"
+    topicPattern: "Enterprise A/Dallas/Line 1/{area}/{equipment}/Description"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "MachineIdentificationType"
+    elementIdTemplate: "Enterprise A.Dallas.Line 1.{area}.{equipment}"
+    displayNameTemplate: "{equipment}"
+
+  # ---------------------------------------------------------------------------
+  # Silo Status values (Dallas source)
+  # Topics: Enterprise A/Dallas/Line 1/BatchHouse/Silo0N/Status/Level|Material
+  # ---------------------------------------------------------------------------
+  - id: "dallas-silo-status"
+    topicPattern: "Enterprise A/Dallas/Line 1/BatchHouse/{silo}/Status/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "StorageSilo"
+    elementIdTemplate: "Enterprise A.Dallas.Line 1.BatchHouse.{silo}.{metric}"
+    displayNameTemplate: "{silo} {metric}"
+
+  # ---------------------------------------------------------------------------
+  # Equipment Status values (Dallas source)
+  # Topics: .../Equipment/Status/ValueName
+  # ---------------------------------------------------------------------------
+  - id: "dallas-equipment-status"
+    topicPattern: "Enterprise A/Dallas/Line 1/{area}/{equipment}/Status/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.Dallas.Line 1.{area}.{equipment}.Status.{metric}"
+    displayNameTemplate: "{equipment} {metric}"
+
+  # ---------------------------------------------------------------------------
+  # Equipment Production values (Dallas source)
+  # Topics: .../Equipment/Production/ValueName
+  # ---------------------------------------------------------------------------
+  - id: "dallas-equipment-production"
+    topicPattern: "Enterprise A/Dallas/Line 1/{area}/{equipment}/Production/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.Dallas.Line 1.{area}.{equipment}.Production.{metric}"
+    displayNameTemplate: "{equipment} {metric}"
+
+  # ---------------------------------------------------------------------------
+  # Equipment State values (Dallas source - MachineryItemState)
+  # Topics: .../Equipment/State/StateCurrent|StateReason
+  # ---------------------------------------------------------------------------
+  - id: "dallas-equipment-state"
+    topicPattern: "Enterprise A/Dallas/Line 1/{area}/{equipment}/State/{stateAttr}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "MachineryItemState"
+    elementIdTemplate: "Enterprise A.Dallas.Line 1.{area}.{equipment}.State.{stateAttr}"
+    displayNameTemplate: "{equipment} {stateAttr}"
+
+  # ---------------------------------------------------------------------------
+  # Edge/raw sensor values (Dallas source)
+  # Topics: .../Equipment/edge/sensor_name
+  # ---------------------------------------------------------------------------
+  - id: "dallas-equipment-edge"
+    topicPattern: "Enterprise A/Dallas/Line 1/{area}/{equipment}/edge/{sensor}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "EdgeSensorValue"
+    elementIdTemplate: "Enterprise A.Dallas.Line 1.{area}.{equipment}.edge.{sensor}"
+    displayNameTemplate: "{equipment} {sensor}"
+
+  # ---------------------------------------------------------------------------
+  # OEE values (Dallas source - line level)
+  # Topics: Enterprise A/Dallas/Line 1/OEE/*
+  # ---------------------------------------------------------------------------
+  - id: "dallas-oee"
+    topicPattern: "Enterprise A/Dallas/Line 1/OEE/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "OEE"
+    elementIdTemplate: "Enterprise A.Dallas.Line 1.OEE.{metric}"
+    displayNameTemplate: "OEE {metric}"
+
+  # ---------------------------------------------------------------------------
+  # BigQuery summary snapshot (Dallas source)
+  # ---------------------------------------------------------------------------
+  - id: "dallas-bigquery"
+    topicPattern: "Enterprise A/Dallas/Line 1/BigQuery"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.Dallas.Line 1.BigQuery"
+    displayNameTemplate: "BigQuery Summary"
+
+  # ---------------------------------------------------------------------------
+  # ISO 7459 compliance data (Dallas source)
+  # ---------------------------------------------------------------------------
+  - id: "dallas-iso7459"
+    topicPattern: "Enterprise A/Dallas/Line 1/ISO7459"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.Dallas.Line 1.ISO7459"
+    displayNameTemplate: "ISO 7459 Compliance"
+
+  - id: "dallas-iso-compliance-overall"
+    topicPattern: "Enterprise A/Dallas/Line 1/ISOComplianceOverall"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.Dallas.Line 1.ISOComplianceOverall"
+    displayNameTemplate: "ISO Compliance Overall"
+
+  - id: "dallas-iso-compliance-percent"
+    topicPattern: "Enterprise A/Dallas/Line 1/ISOCompliancePercent"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.Dallas.Line 1.ISOCompliancePercent"
+    displayNameTemplate: "ISO Compliance %"
+
+  # ===========================================================================
+  # AVEVA SOURCE: Real-time SCADA data
+  # Pattern: Enterprise A/aveva/Line 1/{area}/{equipment}/{category}/{value}
+  # ===========================================================================
+
+  # ---------------------------------------------------------------------------
+  # Site-level SCADA values
+  # ---------------------------------------------------------------------------
+  - id: "aveva-site-datetime"
+    topicPattern: "Enterprise A/aveva/Site/DateTime"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.aveva.Site.DateTime"
+    displayNameTemplate: "SCADA Date/Time"
+
+  - id: "aveva-site-localtime"
+    topicPattern: "Enterprise A/aveva/Site/LocalTime"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.aveva.Site.LocalTime"
+    displayNameTemplate: "SCADA Local Time"
+
+  - id: "aveva-site-schedule"
+    topicPattern: "Enterprise A/aveva/Site/OperatingSchedule"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.aveva.Site.OperatingSchedule"
+    displayNameTemplate: "SCADA Operating Schedule"
+
+  - id: "aveva-site-processflow"
+    topicPattern: "Enterprise A/aveva/Site/ProcessFlow"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.aveva.Site.ProcessFlow"
+    displayNameTemplate: "SCADA Process Flow"
+
+  - id: "aveva-site-shift"
+    topicPattern: "Enterprise A/aveva/Site/CurrentShift"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.aveva.Site.CurrentShift"
+    displayNameTemplate: "SCADA Current Shift"
+
+  # ---------------------------------------------------------------------------
+  # Real-time OEE (fast-polling _OEE from aveva)
+  # ---------------------------------------------------------------------------
+  - id: "aveva-oee-realtime"
+    topicPattern: "Enterprise A/aveva/Line 1/_OEE/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "OEE"
+    elementIdTemplate: "Enterprise A.aveva.Line 1._OEE.{metric}"
+    displayNameTemplate: "RT OEE {metric}"
+
+  # ---------------------------------------------------------------------------
+  # Aggregated OEE (aveva)
+  # ---------------------------------------------------------------------------
+  - id: "aveva-oee-aggregated"
+    topicPattern: "Enterprise A/aveva/Line 1/OEE/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "OEE"
+    elementIdTemplate: "Enterprise A.aveva.Line 1.OEE.{metric}"
+    displayNameTemplate: "OEE {metric}"
+
+  # ---------------------------------------------------------------------------
+  # Equipment Status values (aveva source)
+  # ---------------------------------------------------------------------------
+  - id: "aveva-silo-status"
+    topicPattern: "Enterprise A/aveva/Line 1/BatchHouse/{silo}/Status/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "StorageSilo"
+    elementIdTemplate: "Enterprise A.aveva.Line 1.BatchHouse.{silo}.Status.{metric}"
+    displayNameTemplate: "SCADA {silo} {metric}"
+
+  - id: "aveva-equipment-status"
+    topicPattern: "Enterprise A/aveva/Line 1/{area}/{equipment}/Status/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.aveva.Line 1.{area}.{equipment}.Status.{metric}"
+    displayNameTemplate: "SCADA {equipment} {metric}"
+
+  # ---------------------------------------------------------------------------
+  # Equipment Production values (aveva source)
+  # ---------------------------------------------------------------------------
+  - id: "aveva-equipment-production"
+    topicPattern: "Enterprise A/aveva/Line 1/{area}/{equipment}/Production/{metric}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.aveva.Line 1.{area}.{equipment}.Production.{metric}"
+    displayNameTemplate: "SCADA {equipment} {metric}"
+
+  # ---------------------------------------------------------------------------
+  # Equipment State values (aveva source - MachineryItemState)
+  # ---------------------------------------------------------------------------
+  - id: "aveva-equipment-state"
+    topicPattern: "Enterprise A/aveva/Line 1/{area}/{equipment}/State/{stateAttr}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "MachineryItemState"
+    elementIdTemplate: "Enterprise A.aveva.Line 1.{area}.{equipment}.State.{stateAttr}"
+    displayNameTemplate: "SCADA {equipment} {stateAttr}"
+
+  # ---------------------------------------------------------------------------
+  # Edge/raw sensor values (aveva source)
+  # ---------------------------------------------------------------------------
+  - id: "aveva-equipment-edge"
+    topicPattern: "Enterprise A/aveva/Line 1/{area}/{equipment}/edge/{sensor}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "EdgeSensorValue"
+    elementIdTemplate: "Enterprise A.aveva.Line 1.{area}.{equipment}.edge.{sensor}"
+    displayNameTemplate: "SCADA {equipment} {sensor}"
+
+  # ---------------------------------------------------------------------------
+  # BigQuery (aveva source)
+  # ---------------------------------------------------------------------------
+  - id: "aveva-bigquery"
+    topicPattern: "Enterprise A/aveva/Line 1/BigQuery"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.aveva.Line 1.BigQuery"
+    displayNameTemplate: "SCADA BigQuery Summary"
+
+  - id: "aveva-iso7459"
+    topicPattern: "Enterprise A/aveva/Line 1/ISO7459"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.aveva.Line 1.ISO7459"
+    displayNameTemplate: "SCADA ISO 7459"
+
+  - id: "aveva-iso-overall"
+    topicPattern: "Enterprise A/aveva/Line 1/ISOComplianceOverall"
+    codec: "utf8"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.aveva.Line 1.ISOComplianceOverall"
+    displayNameTemplate: "SCADA ISO Overall"
+
+  - id: "aveva-iso-percent"
+    topicPattern: "Enterprise A/aveva/Line 1/ISOCompliancePercent"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.aveva.Line 1.ISOCompliancePercent"
+    displayNameTemplate: "SCADA ISO %"
+
+  # ===========================================================================
+  # FALLBACK RULES: Catch any remaining Enterprise A topics
+  # ===========================================================================
+
+  # Catch-all for Enterprise A deep topics (6+ segments)
+  - id: "enterprise-a-deep"
+    topicPattern: "Enterprise A/{source}/{line}/{area}/{equipment}/{category}/{value}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.{source}.{line}.{area}.{equipment}.{category}.{value}"
+    displayNameTemplate: "{equipment} {value}"
+
+  # Catch-all for 5-segment Enterprise A topics
+  - id: "enterprise-a-5seg"
+    topicPattern: "Enterprise A/{source}/{line}/{area}/{tag}"
+    codec: "json"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.{source}.{line}.{area}.{tag}"
     displayNameTemplate: "{tag}"
 
-  # ---------------------------------------------------------------------------
-  # Sparkplug B Pattern (if used)
-  # Format: spBv1.0/{group_id}/DDATA/{edge_node_id}/{device_id}
-  # ---------------------------------------------------------------------------
-  - id: "sparkplug-device-data"
-    topicPattern: "spBv1.0/{group}/{type}/{edge}/{device}"
-    codec: "sparkplug"
-    namespaceUri: "urn:sparkplug:{group}"
-    objectTypeId: "{type}"
-    elementIdTemplate: "{group}.{edge}.{device}"
-    displayNameTemplate: "{device}"
-
-  # ---------------------------------------------------------------------------
-  # OPC UA PubSub Pattern (if used)
-  # Format: opcua/{namespace}/{node}
-  # ---------------------------------------------------------------------------
-  - id: "opcua-pubsub"
-    topicPattern: "opcua/{namespace}/{node}"
+  # Catch-all for 4-segment Enterprise A topics
+  - id: "enterprise-a-4seg"
+    topicPattern: "Enterprise A/{source}/{line}/{tag}"
     codec: "json"
-    namespaceUri: "urn:opcua:{namespace}"
-    objectTypeId: "OpcUaNode"
-    elementIdTemplate: "opcua.{namespace}.{node}"
-    displayNameTemplate: "{node}"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.{source}.{line}.{tag}"
+    displayNameTemplate: "{tag}"
 
-  # ---------------------------------------------------------------------------
-  # Temperature Sensors (specific pattern)
-  # Matches: */*/TI-*
-  # ---------------------------------------------------------------------------
-  - id: "temperature-sensors"
-    topicPattern: "{enterprise}/{system}/TI-{tagId}"
+  # Catch-all for 3-segment Enterprise A topics
+  - id: "enterprise-a-3seg"
+    topicPattern: "Enterprise A/{source}/{tag}"
     codec: "json"
-    namespaceUri: "urn:proveit:{enterprise}"
-    objectTypeId: "TemperatureSensor"
-    elementIdTemplate: "{enterprise}.{system}.TI-{tagId}"
-    displayNameTemplate: "Temperature TI-{tagId}"
-
-  # ---------------------------------------------------------------------------
-  # Flow Sensors (specific pattern)
-  # Matches: */*/FI-*
-  # ---------------------------------------------------------------------------
-  - id: "flow-sensors"
-    topicPattern: "{enterprise}/{system}/FI-{tagId}"
-    codec: "json"
-    namespaceUri: "urn:proveit:{enterprise}"
-    objectTypeId: "FlowSensor"
-    elementIdTemplate: "{enterprise}.{system}.FI-{tagId}"
-    displayNameTemplate: "Flow FI-{tagId}"
-
-  # ---------------------------------------------------------------------------
-  # Pressure Sensors (specific pattern)
-  # Matches: */*/PI-*
-  # ---------------------------------------------------------------------------
-  - id: "pressure-sensors"
-    topicPattern: "{enterprise}/{system}/PI-{tagId}"
-    codec: "json"
-    namespaceUri: "urn:proveit:{enterprise}"
-    objectTypeId: "PressureSensor"
-    elementIdTemplate: "{enterprise}.{system}.PI-{tagId}"
-    displayNameTemplate: "Pressure PI-{tagId}"
-
-  # ---------------------------------------------------------------------------
-  # Level Sensors (specific pattern)
-  # Matches: */*/LI-*
-  # ---------------------------------------------------------------------------
-  - id: "level-sensors"
-    topicPattern: "{enterprise}/{system}/LI-{tagId}"
-    codec: "json"
-    namespaceUri: "urn:proveit:{enterprise}"
-    objectTypeId: "LevelSensor"
-    elementIdTemplate: "{enterprise}.{system}.LI-{tagId}"
-    displayNameTemplate: "Level LI-{tagId}"
-
-  # ---------------------------------------------------------------------------
-  # Pumps (specific pattern)
-  # Matches: */*/P-*
-  # ---------------------------------------------------------------------------
-  - id: "pumps"
-    topicPattern: "{enterprise}/{system}/P-{tagId}"
-    codec: "json"
-    namespaceUri: "urn:proveit:{enterprise}"
-    objectTypeId: "Pump"
-    elementIdTemplate: "{enterprise}.{system}.P-{tagId}"
-    displayNameTemplate: "Pump P-{tagId}"
-
-  # ---------------------------------------------------------------------------
-  # Valves (specific pattern)
-  # Matches: */*/V-* or */*/XV-*
-  # ---------------------------------------------------------------------------
-  - id: "valves"
-    topicPattern: "{enterprise}/{system}/V-{tagId}"
-    codec: "json"
-    namespaceUri: "urn:proveit:{enterprise}"
-    objectTypeId: "Valve"
-    elementIdTemplate: "{enterprise}.{system}.V-{tagId}"
-    displayNameTemplate: "Valve V-{tagId}"
-
-  # ---------------------------------------------------------------------------
-  # Motors (specific pattern)
-  # Matches: */*/M-*
-  # ---------------------------------------------------------------------------
-  - id: "motors"
-    topicPattern: "{enterprise}/{system}/M-{tagId}"
-    codec: "json"
-    namespaceUri: "urn:proveit:{enterprise}"
-    objectTypeId: "Motor"
-    elementIdTemplate: "{enterprise}.{system}.M-{tagId}"
-    displayNameTemplate: "Motor M-{tagId}"
+    namespaceUri: "urn:proveit:enterprise-a"
+    objectTypeId: "GenericTag"
+    elementIdTemplate: "Enterprise A.{source}.{tag}"
+    displayNameTemplate: "{tag}"

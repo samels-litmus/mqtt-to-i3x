@@ -116,7 +116,7 @@ export async function registerObjectsRoutes(
         })
         .filter(Boolean);
 
-      return { objects };
+      return objects;
     }
   );
 }

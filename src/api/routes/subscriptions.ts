@@ -128,12 +128,18 @@ export async function registerSubscriptionsRoutes(
         return reply.code(404).send({ error: 'Subscription not found' });
       }
 
-      // Set SSE headers
+      // Hijack the response so Fastify doesn't auto-close the stream
+      reply.hijack();
+
+      // Set SSE headers (must include CORS manually since we bypass Fastify's reply pipeline)
+      const origin = request.headers.origin || '*';
       reply.raw.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
         'X-Accel-Buffering': 'no', // Disable nginx buffering
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Credentials': 'true',
       });
 
       // Send initial comment to establish connection
@@ -146,9 +152,6 @@ export async function registerSubscriptionsRoutes(
       request.raw.on('close', () => {
         manager.detachSse(subscriptionId);
       });
-
-      // Keep the connection open (don't return)
-      // The response will be ended when the client disconnects or subscription is deleted
     }
   );
 
