@@ -330,9 +330,9 @@ export class ObjectStore {
 
   // --- Computed property helpers (derived from relationship map) ---
 
-  getParentId(elementId: string): string | undefined {
+  getParentId(elementId: string): string {
     const rels = this.getRelationships(elementId, 'HasParent');
-    return rels.length > 0 ? rels[0].targetElementId : undefined;
+    return rels.length > 0 ? rels[0].targetElementId : '/';
   }
 
   hasChildren(elementId: string): boolean {
