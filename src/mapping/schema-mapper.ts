@@ -44,7 +44,7 @@ export class SchemaMapper {
 
     const typeId = rule.objectTypeId
       ? renderTemplate(rule.objectTypeId, captures)
-      : 'GenericObject';
+      : 'GenericTag';
 
     const displayName = rule.displayNameTemplate
       ? renderTemplate(rule.displayNameTemplate, captures)

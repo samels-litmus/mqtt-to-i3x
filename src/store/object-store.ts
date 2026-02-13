@@ -47,6 +47,19 @@ export class ObjectStore {
 
   constructor() {
     this.seedBuiltInRelationshipTypes();
+    this.seedBuiltInObjectTypes();
+  }
+
+  private seedBuiltInObjectTypes(): void {
+    const builtIn: ObjectType[] = [
+      { elementId: 'GenericTag', displayName: 'Generic Tag', namespaceUri: 'urn:i3x:types' },
+      { elementId: 'Placeholder', displayName: 'Placeholder', namespaceUri: 'urn:i3x:types' },
+      { elementId: 'ScalarProperty', displayName: 'Scalar Property', namespaceUri: 'urn:i3x:types' },
+      { elementId: 'DecomposedComponent', displayName: 'Decomposed Component', namespaceUri: 'urn:i3x:types' },
+    ];
+    for (const t of builtIn) {
+      this.types.set(t.elementId, t);
+    }
   }
 
   private seedBuiltInRelationshipTypes(): void {
