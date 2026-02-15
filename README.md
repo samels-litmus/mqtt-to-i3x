@@ -1,13 +1,13 @@
-# MQTT-to-I3X
+# mqtt-to-i3X
 
-A protocol bridge that transforms raw MQTT messages into i3x-compliant HTTP/S endpoints with real-time subscriptions and at-least-once delivery guarantees.
+A protocol bridge that transforms raw MQTT messages into i3X-compliant HTTP/S endpoints with real-time subscriptions and at-least-once delivery guarantees.
 
 ## Overview
 
-**MQTT to I3X** extracts binary data from MQTT payloads, decodes them through pluggable codecs, maps to structured i3x object schemas, and exposes values via a live messaging API.
+**mqtt-to-i3X** extracts binary data from MQTT payloads, decodes them through pluggable codecs, maps to structured i3X object schemas, and exposes values via a live messaging API.
 
 ```
-MQTT Broker          Data Pipeline                              i3x Clients
+MQTT Broker          Data Pipeline                              i3X Clients
     │                                                               │
     │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐       │
     └──│   Byte      │──│   Codec     │──│   Schema        │──┐    │
@@ -25,7 +25,7 @@ MQTT Broker          Data Pipeline                              i3x Clients
           ┌───────────────────────────────────┘
           │
           │  ┌─────────────────────────────────────────────────┐
-          └──│   i3x REST API (Fastify)                        │
+          └──│   i3X REST API (Fastify)                        │
              │   - Explore: /namespaces, /objecttypes, /objects│
              │   - Query: /objects/value, /relationships       │
              │   - Subscribe: /subscriptions/*/stream, /*/sync │
@@ -35,81 +35,26 @@ MQTT Broker          Data Pipeline                              i3x Clients
 
 ## Quick Start
 
-1- Edit config.yaml with 
---- MQTT broker connection info
---- I3X Namespace configuration
---- SMProfile object mapping rules [Pro Tip: Use 'sniff-]
+1. Edit `config.yaml` with your MQTT broker connection, i3X namespace configuration, and SM Profile object mapping rules
+2. Run the server:
 
-2- Run the demo server with the conf
+```bash
+# Development (auto-reloads on file changes)
+npm run dev
 
-```typescript
-import {
-  createMqttClient,
-  createMessageHandler,
-  attachHandler,
-  MappingEngine,
-  SchemaMapper,
-  ObjectStore,
-  SubscriptionManager,
-  registerBuiltinCodecs,
-  createServer,
-} from './src/index.js';
+# Production
+npm run build
+npm start
+```
 
-// 1. Register built-in codecs
-registerBuiltinCodecs();
+By default the server loads `./config.yaml`. Pass a different config file as an argument:
 
-// 2. Configure mapping rules
-const mappingEngine = new MappingEngine();
-mappingEngine.addRule({
-  id: 'temperature-sensors',
-  topicPattern: '{site}/sensors/temp/{sensorId}',
-  codec: 'float32',
-  extraction: { byteOffset: 0, byteLength: 4, endian: 'big' },
-  namespaceUri: 'urn:factory:{site}',
-  objectTypeId: 'TemperatureSensor',
-  elementIdTemplate: 'temp.{site}.{sensorId}',
-  displayNameTemplate: 'Temperature {sensorId} @ {site}',
-});
+```bash
+# Dev
+npx tsx src/server.ts ./my-config.yaml
 
-// 3. Initialize stores
-const objectStore = new ObjectStore();
-const subscriptionManager = new SubscriptionManager();
-const schemaMapper = new SchemaMapper();
-
-// 4. Wire up subscription notifications
-objectStore.addChangeListener((elementId, value) => {
-  subscriptionManager.notifyChange(elementId, value);
-});
-
-// 5. Create MQTT client and handler
-const mqttClient = createMqttClient({
-  brokerUrl: 'mqtt://localhost:1883',
-  clientId: 'i3x-bridge',
-});
-
-const handler = createMessageHandler({
-  mappingEngine,
-  schemaMapper,
-  objectStore,
-});
-
-attachHandler(mqttClient, handler);
-
-// 6. Connect and subscribe
-await mqttClient.connect();
-mqttClient.subscribe('+/sensors/temp/+');
-
-// 7. Start API server
-const server = await createServer(
-  { port: 3000, host: '0.0.0.0' },
-  { apiKeys: ['your-api-key'] },
-  objectStore,
-  subscriptionManager,
-  mappingEngine,
-  mqttClient
-);
-
-await server.listen({ port: 3000, host: '0.0.0.0' });
+# Production
+node dist/server.js ./my-config.yaml
 ```
 
 ## Configuration
@@ -128,7 +73,7 @@ auth:
 
 mqtt:
   brokerUrl: "mqtt://localhost:1883"
-  clientId: "i3x-bridge"
+  clientId: "mqtt-to-i3x"
   username: "user"
   password: "pass"
   protocolVersion: 5
@@ -165,15 +110,11 @@ mappings:
     displayNameTemplate: "Temperature Sensor {sensorId} @ {site}"
 ```
 
-Load with:
-```typescript
-import { loadConfig } from './src/config/loader.js';
-const config = loadConfig('./config/default.yaml');
-```
+The server loads this file automatically at startup (see [Quick Start](#quick-start)).
 
 ## Mapping Rules
 
-Mapping rules define how MQTT messages are transformed into i3x objects.
+Mapping rules define how MQTT messages are transformed into i3X objects.
 
 ### Topic Pattern Matching
 
@@ -244,7 +185,7 @@ interface MappingRule {
   codec: string;                   // Codec name (see Built-in Codecs)
   codecOptions?: Record<string, unknown>;
 
-  // i3x Schema Mapping
+  // i3X Schema Mapping
   namespaceUri?: string;           // Template for namespace
   objectTypeId?: string;           // Template for type ID
   elementIdTemplate?: string;      // Template for element ID
@@ -624,29 +565,49 @@ curl -X POST http://localhost:3000/objects/value \
   -d '{"elementIds":["temp.factory-A.sensor-01"]}'
 ```
 
-## Running Tests
+## Development
 
 ```bash
-# Build
+# Install dependencies
+npm install
+
+# Run in dev mode (auto-reloads on changes)
+npm run dev
+
+# Type-check without emitting
+npx tsc --noEmit
+
+# Build for production
 npm run build
 
-# Run integration test (requires MQTT broker)
-npx tsx test-integration.ts
+# Run production build
+npm start
 ```
 
-The integration test verifies:
-- MQTT connection and message receipt
-- Full extraction/decode/map pipeline
-- All API endpoints (Explore, Query, Subscribe, Admin)
-- Authentication enforcement
-- Subscription lifecycle
+## Visualizer
+
+Open `helpers/examples/EXAMPLE-i3X-server-visualizer.html` in a browser while the server is running to get an interactive force-directed graph of the entire object store. It connects to `http://localhost:3000` and renders all namespaces, object types, instances, and their relationships on a canvas.
+
+- Click a namespace node to expand its children
+- Click any container to drill deeper into the hierarchy
+- Double-click a leaf node to open a detail overlay with its current value, properties, and relationships
+- Use the search box to filter nodes by name or element ID
+- "Expand All" progressively opens every level
+
+No build step required — it's a standalone HTML file.
 
 ## Project Structure
 
 ```
-i3x-via-mqtt/
+mqtt-to-i3x/
+├── config.yaml                      # Runtime configuration
+├── helpers/
+│   └── examples/
+│       ├── EXAMPLE-config.yaml      # Example configuration
+│       └── EXAMPLE-i3X-server-visualizer.html  # Interactive object store visualizer
 ├── src/
-│   ├── index.ts                    # Entry point & exports
+│   ├── server.ts                    # Entry point (dev & production)
+│   ├── index.ts                     # Library re-exports
 │   ├── config/
 │   │   └── loader.ts               # YAML config parser
 │   ├── extraction/
@@ -658,7 +619,7 @@ i3x-via-mqtt/
 │   ├── mapping/
 │   │   ├── template.ts             # Topic pattern matching
 │   │   ├── engine.ts               # Mapping rule engine
-│   │   └── schema-mapper.ts        # i3x schema mapping
+│   │   └── schema-mapper.ts        # i3X schema mapping
 │   ├── store/
 │   │   └── object-store.ts         # Canonical in-memory store
 │   ├── mqtt/
@@ -678,7 +639,7 @@ i3x-via-mqtt/
 │           ├── subscriptions.ts
 │           ├── admin-types.ts
 │           └── admin-mappings.ts
-├── test-integration.ts             # End-to-end test
+├── dist/                            # Compiled output (npm run build)
 ├── package.json
 └── tsconfig.json
 ```

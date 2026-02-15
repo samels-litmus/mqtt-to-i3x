@@ -1,30 +1,28 @@
 /**
- * MQTT-to-I3X Server Startup (Configuration File Mode)
+ * MQTT-to-I3X Server Startup
  * Loads configuration from YAML file and starts the server
- *
-
  */
 
-import { createMqttClient, createMessageHandler, attachHandler } from './src/mqtt/index.js';
-import { MappingEngine } from './src/mapping/engine.js';
-import { SchemaMapper } from './src/mapping/schema-mapper.js';
-import { ObjectStore } from './src/store/object-store.js';
-import { codecRegistry } from './src/codecs/registry.js';
-import { registerBuiltinCodecs } from './src/codecs/builtin.js';
-import { loadConfig, AppConfig } from './src/config/loader.js';
-import { createServer } from './src/api/server.js';
-import { SubscriptionManager } from './src/subscriptions/manager.js';
+import { createMqttClient, createMessageHandler, attachHandler } from './mqtt/index.js';
+import { MappingEngine } from './mapping/engine.js';
+import { SchemaMapper } from './mapping/schema-mapper.js';
+import { ObjectStore } from './store/object-store.js';
+import { codecRegistry } from './codecs/registry.js';
+import { registerBuiltinCodecs } from './codecs/builtin.js';
+import { loadConfig, AppConfig } from './config/loader.js';
+import { createServer } from './api/server.js';
+import { SubscriptionManager } from './subscriptions/manager.js';
 
 function printUsage() {
   console.log(`
-Usage: npx tsx start-with-config.ts [config-file]
+Usage: mqtt-to-i3x [config-file]
 
 Arguments:
   config-file   Path to YAML configuration file (default: ./config.yaml)
 
 Examples:
- *   npx tsx run-server-with-config.ts                 # Uses ./config.yaml
- *   npx tsx run-server-with-config.ts my-config.yaml`)
+  mqtt-to-i3x                     # Uses ./config.yaml
+  mqtt-to-i3x my-config.yaml`)
 }
 
 async function main() {
@@ -109,7 +107,7 @@ async function main() {
 
   const mqttConfig = {
     ...config.mqtt,
-    clientId: `${config.mqtt.clientId || 'i3x-server'}-${Date.now()}`,
+    clientId: `${config.mqtt.clientId || 'mqtt-to-i3x'}-${Date.now()}`,
   };
 
   const mqttClient = createMqttClient(mqttConfig);
