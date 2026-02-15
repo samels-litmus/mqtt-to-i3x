@@ -1,10 +1,10 @@
-# mqtt-to-i3x
+# MQTT-to-I3X
 
-A protocol bridge that transforms raw MQTT messages into i3x-compliant REST API endpoints with real-time subscriptions and at-least-once delivery guarantees.
+A protocol bridge that transforms raw MQTT messages into i3x-compliant HTTP/S endpoints with real-time subscriptions and at-least-once delivery guarantees.
 
 ## Overview
 
-**i3x-via-mqtt** extracts binary data from MQTT payloads at bit-level granularity, decodes them through pluggable codecs, maps to structured i3x object schemas, and exposes values via a live messaging API.
+**MQTT to I3X** extracts binary data from MQTT payloads, decodes them through pluggable codecs, maps to structured i3x object schemas, and exposes values via a live messaging API.
 
 ```
 MQTT Broker          Data Pipeline                              i3x Clients
@@ -27,28 +27,20 @@ MQTT Broker          Data Pipeline                              i3x Clients
           │  ┌─────────────────────────────────────────────────┐
           └──│   i3x REST API (Fastify)                        │
              │   - Explore: /namespaces, /objecttypes, /objects│
-             │   - Query: /objects/value                       │
+             │   - Query: /objects/value, /relationships       │
              │   - Subscribe: /subscriptions/*/stream, /*/sync │
              │   - Admin: /admin/objecttypes, /admin/mappings  │
              └─────────────────────────────────────────────────┘
 ```
 
-### Key Characteristics
-
-- **Last-known-value only** - No history storage; each elementId has exactly one current value
-- **Single canonical instance** - Upsert replaces, never appends
-- **Read-only bridge** - No write-back to MQTT
-- **At-least-once delivery** - Sync queues guarantee no missed updates
-- **Bit-level extraction** - Industrial protocols pack data tightly; extraction handles any granularity
-
-## Installation
-
-```bash
-npm install
-npm run build
-```
-
 ## Quick Start
+
+1- Edit config.yaml with 
+--- MQTT broker connection info
+--- I3X Namespace configuration
+--- SMProfile object mapping rules [Pro Tip: Use 'sniff-]
+
+2- Run the demo server with the conf
 
 ```typescript
 import {

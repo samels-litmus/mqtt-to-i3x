@@ -1,13 +1,8 @@
 /**
- * i3x-via-mqtt Server Startup (Configuration File Mode)
+ * MQTT-to-I3X Server Startup (Configuration File Mode)
  * Loads configuration from YAML file and starts the server
  *
- * Usage:
- *   npx tsx start-with-config.ts [config-file]
- *
- * Examples:
- *   npx tsx start-with-config.ts              # Uses ./config.yaml
- *   npx tsx start-with-config.ts my-config.yaml
+
  */
 
 import { createMqttClient, createMessageHandler, attachHandler } from './src/mqtt/index.js';
@@ -28,14 +23,11 @@ Arguments:
   config-file   Path to YAML configuration file (default: ./config.yaml)
 
 Examples:
-  npx tsx start-with-config.ts
-  npx tsx start-with-config.ts ./my-config.yaml
-  npx tsx start-with-config.ts /etc/i3x/production.yaml
-`);
+ *   npx tsx run-server-with-config.ts                 # Uses ./config.yaml
+ *   npx tsx run-server-with-config.ts my-config.yaml`)
 }
 
 async function main() {
-  // Parse command line arguments
   const args = process.argv.slice(2);
 
   if (args.includes('--help') || args.includes('-h')) {
@@ -46,7 +38,7 @@ async function main() {
   const configPath = args[0] || './config.yaml';
 
   console.log('='.repeat(60));
-  console.log('i3x-via-mqtt Server');
+  console.log('MQTT-to-I3X Server');
   console.log('='.repeat(60));
   console.log();
 
@@ -161,19 +153,6 @@ async function main() {
   console.log(`Server running at ${protocol}://${config.server.host}:${config.server.port}`);
   console.log(`API Keys: ${config.auth.apiKeys.length} configured`);
   console.log('='.repeat(60));
-  console.log();
-  console.log('Endpoints:');
-  console.log('  GET  /namespaces');
-  console.log('  GET  /objecttypes');
-  console.log('  GET  /objects');
-  console.log('  POST /objects/value');
-  console.log('  POST /subscriptions');
-  console.log('  GET  /subscriptions/{id}/stream  (SSE)');
-  console.log('  POST /subscriptions/{id}/sync');
-  console.log('  GET  /admin/mappings');
-  console.log('  POST /admin/mappings');
-  console.log('  GET  /admin/objecttypes');
-  console.log('  POST /admin/objecttypes');
   console.log();
   console.log('Press Ctrl+C to stop');
 

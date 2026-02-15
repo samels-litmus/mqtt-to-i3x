@@ -1,0 +1,4 @@
+*_archive*
+*node_modules*
+*.claude*
+*dist*
