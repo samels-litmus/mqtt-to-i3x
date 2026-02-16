@@ -315,6 +315,36 @@ Get last-known values for specified elements.
 }
 ```
 
+#### POST /objects/related
+Get objects related to a given element, with optional depth traversal.
+
+**Request:**
+```json
+{
+  "elementId": "temp.factory-A.sensor-01",
+  "relationshipTypeId": "HasComponent",
+  "depth": 2,
+  "includeMetadata": true
+}
+```
+- `elementId` — starting element (required)
+- `relationshipTypeId` — filter to a specific relationship type (optional, omit for all types)
+- `depth` — recursion depth, 0 = direct relatives only (default: 0)
+- `includeMetadata` — include `typeId` and `isComposition` in response (default: false)
+
+#### GET /relationshiptypes
+List all relationship types. Optional filter: `?namespaceUri=...`
+
+Built-in types: `HasParent`, `HasChildren`, `HasComponent`, `ComponentOf`.
+
+#### POST /relationshiptypes/query
+Batch fetch specific relationship types.
+
+**Request:**
+```json
+{ "elementIds": ["HasComponent", "HasParent"] }
+```
+
 #### POST /objects/history
 Returns 501 Not Implemented (history not supported in this bridge).
 
