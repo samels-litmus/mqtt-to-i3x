@@ -1,6 +1,6 @@
 # MQTT-to-i3X
 
-This utility acts as a protocol bridge that transforms raw MQTT messages into i3X-compliant HTTP/S endpoints delivering CESMII SMProfile object models with real-time subscriptions.
+A protocol bridge that transforms raw MQTT messages into i3X-compliant HTTP/S endpoints delivering CESMII SMProfile object models with real-time subscriptions.
 
 ## Overview
 
@@ -114,7 +114,7 @@ The server loads this file automatically at startup (see [Quick Start](#quick-st
 
 ## Mapping Rules
 
-Mapping rules define how MQTT messages are transformed into i3X objects.
+Mapping rules define how MQTT messages are transformed into i3X objects. NOTE: see /helpers for resources to assist AI-generation of Mapping Rules.
 
 ### Topic Pattern Matching
 
