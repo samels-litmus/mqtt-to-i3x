@@ -1,10 +1,10 @@
-# mqtt-to-i3X
+# MQTT-to-i3X
 
-A protocol bridge that transforms raw MQTT messages into i3X-compliant HTTP/S endpoints with real-time subscriptions and at-least-once delivery guarantees.
+This utility acts as a protocol bridge that transforms raw MQTT messages into i3X-compliant HTTP/S endpoints delivering CESMII SMProfile object models with real-time subscriptions.
 
 ## Overview
 
-**mqtt-to-i3X** extracts binary data from MQTT payloads, decodes them through pluggable codecs, maps to structured i3X object schemas, and exposes values via a live messaging API.
+**MQTT-to-i3X** extracts binary data from MQTT payloads, decodes them through pluggable codecs, maps to structured i3X object schemas, and exposes values via a live messaging API.
 
 ```
 MQTT Broker          Data Pipeline                              i3X Clients
