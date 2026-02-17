@@ -1,4 +1,6 @@
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { ObjectStore } from '../store/object-store.js';
@@ -79,6 +81,19 @@ export async function createServer(
   const authEnabled = authConfig.enabled ?? (authConfig.apiKeys.length > 0);
   if (authEnabled && authConfig.apiKeys.length > 0) {
     fastify.addHook('onRequest', createAuthHook(authConfig.apiKeys));
+  }
+
+  // Serve visualizer HTML at /visualizer
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const vizPath = resolve(__dirname, '..', '..', 'public', 'visualizer.html');
+  if (existsSync(vizPath)) {
+    const vizHtml = readFileSync(vizPath, 'utf8');
+    fastify.get('/visualizer', async (_request, reply) => {
+      reply.type('text/html').send(vizHtml);
+    });
+    fastify.get('/', async (_request, reply) => {
+      reply.redirect('/visualizer');
+    });
   }
 
   await fastify.register(registerNamespacesRoutes, { prefix: '' });

@@ -8,6 +8,12 @@ export function createAuthHook(apiKeys: string[]) {
     reply: FastifyReply,
     done: HookHandlerDoneFunction
   ): void {
+    // Skip auth for the visualizer and root redirect
+    if (request.method === 'GET' && (request.url === '/visualizer' || request.url === '/')) {
+      done();
+      return;
+    }
+
     let token: string | undefined;
 
     // Check X-API-Key header first

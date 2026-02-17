@@ -57,17 +57,37 @@ npx tsx src/server.ts ./my-config.yaml
 node dist/server.js ./my-config.yaml
 ```
 
+### Docker
+
+Build and run everything in a single container:
+
+```bash
+# Build the image
+docker build -t mqtt-to-i3x .
+
+# Run the container
+docker run -p 3000:3000 mqtt-to-i3x
+```
+
+The image uses a multi-stage build (Node 22 Alpine) that compiles TypeScript in a build stage and produces a lean runtime image with only production dependencies. The current `config.yaml` is baked into the image.
+
 ## Visualizer
 
-This project includes a simple visual aid for delightfully navigating your i3X namespace. 
+The server includes a built-in interactive visualizer at `/visualizer`. Once the server is running, open it in a browser:
 
-Open the single file `helpers/examples/EXAMPLE-i3X-server-visualizer.html` in a browser while the server is running to get an interactive force-directed graph of the entire object store. When loaded, the page connects to `http://localhost:3000` and renders all namespaces, object types, instances, and their relationships on a canvas.
+```
+http://localhost:3000/visualizer
+```
+
+This renders a force-directed graph of the entire object store — all namespaces, object types, instances, and their relationships on a canvas.
 
 - Click a namespace node to expand its children
 - Click any container to drill deeper into the hierarchy
 - Double-click a leaf node to open a detail overlay with its current value, properties, and relationships
 - Use the search box to filter nodes by name or element ID
 - "Expand All" progressively opens every level (and blends the lines of engineering and art!)
+
+The standalone source file is also available at `helpers/examples/i3X-server-visualizer.html`.
 
 ## Detailed MQTT-to-i3X Configuration Guide
 
@@ -631,10 +651,13 @@ npm start
 ```
 mqtt-to-i3x/
 ├── config.yaml                      # Runtime configuration
+├── Dockerfile                       # Multi-stage container build
+├── public/
+│   └── visualizer.html              # Served at /visualizer
 ├── helpers/
 │   └── examples/
-│       ├── EXAMPLE-config.yaml      # Example configuration
-│       └── EXAMPLE-i3X-server-visualizer.html  # Interactive object store visualizer
+│       ├── config.yaml              # Example configuration
+│       └── i3X-server-visualizer.html  # Standalone visualizer source
 ├── src/
 │   ├── server.ts                    # Entry point (dev & production)
 │   ├── index.ts                     # Library re-exports
