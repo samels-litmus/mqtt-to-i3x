@@ -57,7 +57,19 @@ npx tsx src/server.ts ./my-config.yaml
 node dist/server.js ./my-config.yaml
 ```
 
-## Configuration
+## Visualizer
+
+This project includes a simple visual aid for delightfully navigating your i3X namespace. 
+
+Open the single file `helpers/examples/EXAMPLE-i3X-server-visualizer.html` in a browser while the server is running to get an interactive force-directed graph of the entire object store. When loaded, the page connects to `http://localhost:3000` and renders all namespaces, object types, instances, and their relationships on a canvas.
+
+- Click a namespace node to expand its children
+- Click any container to drill deeper into the hierarchy
+- Double-click a leaf node to open a detail overlay with its current value, properties, and relationships
+- Use the search box to filter nodes by name or element ID
+- "Expand All" progressively opens every level (and blends the lines of engineering and art!)
+
+## Detailed MQTT-to-i3X Configuration Guide
 
 ### YAML Configuration File
 
@@ -613,18 +625,6 @@ npm run build
 # Run production build
 npm start
 ```
-
-## Visualizer
-
-Open `helpers/examples/EXAMPLE-i3X-server-visualizer.html` in a browser while the server is running to get an interactive force-directed graph of the entire object store. It connects to `http://localhost:3000` and renders all namespaces, object types, instances, and their relationships on a canvas.
-
-- Click a namespace node to expand its children
-- Click any container to drill deeper into the hierarchy
-- Double-click a leaf node to open a detail overlay with its current value, properties, and relationships
-- Use the search box to filter nodes by name or element ID
-- "Expand All" progressively opens every level
-
-No build step required — it's a standalone HTML file.
 
 ## Project Structure
 
