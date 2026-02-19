@@ -117,6 +117,7 @@
   <div class="legend-row"><svg class="legend-shape" viewBox="0 0 12 12"><rect x="1" y="2" width="10" height="8" rx="2" fill="none" stroke="#6b7194" stroke-width="1"/></svg> Data Tag</div>
   <div class="legend-row"><svg class="legend-shape" viewBox="0 0 12 12"><polygon points="6,1 11,6 6,11 1,6" fill="none" stroke="#6b7194" stroke-width="1"/></svg> Instrument</div>
   <div class="legend-row"><svg class="legend-shape" viewBox="0 0 12 12"><polygon points="6,1 10.5,3.5 10.5,8.5 6,11 1.5,8.5 1.5,3.5" fill="none" stroke="#6b7194" stroke-width="1"/></svg> Equipment</div>
+  <div class="legend-row"><svg class="legend-shape" viewBox="0 0 12 4"><line x1="0" y1="2" x2="12" y2="2" stroke="#6b7194" stroke-width="1" stroke-dasharray="2,2"/></svg> Type &rarr; Instance</div>
 </div>
 
 <script>
@@ -130,7 +131,13 @@ const SAND_FRICTION = 0.85;
 const SPRING_K = 0.065;
 const SPRING_DAMP = 0.7;
 const COLLISION_STRENGTH = 0.3;
-const SAND_COUNT = 5000;
+const SAND_COUNT = 60000;
+const SAND_PUSH_RADIUS = 2.5;    // multiplier on node radius for sand displacement range
+const SAND_PUSH_STRENGTH = 0.4;  // how hard nodes push sand
+const SAND_DAMPING = 0.94;       // sand velocity friction per frame
+const SAND_GRAIN_REPEL = 0.02;   // gentle grain-grain push (only nearby)
+const SAND_SETTLE_SPEED = 0.003; // how fast grains drift back to home
+const SAND_CELL = 60;            // spatial hash cell size
 
 // ===== CANVAS =====
 let W, H, dpr;
@@ -217,15 +224,112 @@ function shapeFor(obj) {
 function initSand() {
   sandGrains = [];
   for (let i = 0; i < SAND_COUNT; i++) {
+    const dense = i < SAND_COUNT * 0.8;
+    const hx = dense ? (Math.random() - 0.5) * 3000 : (Math.random() - 0.5) * 8000;
+    const hy = dense ? (Math.random() - 0.5) * 2250 : (Math.random() - 0.5) * 6000;
     sandGrains.push({
-      x: (Math.random() - 0.5) * 8000,
-      y: (Math.random() - 0.5) * 6000,
+      x: hx, y: hy,
+      hx: hx, hy: hy,
+      vx: 0, vy: 0,
       r: Math.random() * 1.1 + 0.3,
-      a: Math.random() * 0.045 + 0.015,
+      a: Math.random() * 0.15 + 0.08,
     });
   }
 }
 initSand();
+
+// ===== SAND SPATIAL HASH =====
+let sandHash = {};
+function sandHashKey(x, y) {
+  return ((x / SAND_CELL) | 0) + ',' + ((y / SAND_CELL) | 0);
+}
+function buildSandHash() {
+  sandHash = {};
+  for (let i = 0; i < sandGrains.length; i++) {
+    const g = sandGrains[i];
+    const k = sandHashKey(g.x, g.y);
+    if (!sandHash[k]) sandHash[k] = [];
+    sandHash[k].push(i);
+  }
+}
+function sandNear(wx, wy, range) {
+  const result = [];
+  const cx0 = ((wx - range) / SAND_CELL) | 0;
+  const cx1 = ((wx + range) / SAND_CELL) | 0;
+  const cy0 = ((wy - range) / SAND_CELL) | 0;
+  const cy1 = ((wy + range) / SAND_CELL) | 0;
+  for (let cx = cx0; cx <= cx1; cx++) {
+    for (let cy = cy0; cy <= cy1; cy++) {
+      const bucket = sandHash[cx + ',' + cy];
+      if (bucket) for (const idx of bucket) result.push(idx);
+    }
+  }
+  return result;
+}
+
+// ===== SAND PHYSICS =====
+function sandPhysics() {
+  buildSandHash();
+
+  // Node -> sand interaction
+  for (const n of nodes) {
+    if (n.removing) continue;
+    const speed = Math.sqrt(n.vx * n.vx + n.vy * n.vy);
+    const pushR = n.radius * SAND_PUSH_RADIUS;
+    const nearby = sandNear(n.x, n.y, pushR);
+    for (const idx of nearby) {
+      const g = sandGrains[idx];
+      const dx = g.x - n.x;
+      const dy = g.y - n.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+      if (dist < pushR) {
+        const overlap = 1 - dist / pushR;
+        const force = overlap * overlap * SAND_PUSH_STRENGTH;
+        const nx = dx / dist;
+        const ny = dy / dist;
+        g.vx += nx * force * (1 + speed * 0.5);
+        g.vy += ny * force * (1 + speed * 0.5);
+        g.vx += n.vx * overlap * 0.15;
+        g.vy += n.vy * overlap * 0.15;
+      }
+    }
+  }
+
+  // Grain-grain soft repulsion (sampled for performance)
+  const step = Math.max(1, (sandGrains.length / 800) | 0);
+  for (let i = 0; i < sandGrains.length; i += step) {
+    const g = sandGrains[i];
+    const nearby = sandNear(g.x, g.y, 4);
+    for (const jIdx of nearby) {
+      if (jIdx === i) continue;
+      const h = sandGrains[jIdx];
+      const dx = h.x - g.x;
+      const dy = h.y - g.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+      if (dist < 3) {
+        const push = (3 - dist) * SAND_GRAIN_REPEL;
+        const nx = dx / dist;
+        const ny = dy / dist;
+        g.vx -= nx * push;
+        g.vy -= ny * push;
+        h.vx += nx * push;
+        h.vy += ny * push;
+      }
+    }
+  }
+
+  // Update grain positions
+  for (const g of sandGrains) {
+    g.vx += (g.hx - g.x) * SAND_SETTLE_SPEED;
+    g.vy += (g.hy - g.y) * SAND_SETTLE_SPEED;
+    g.vx *= SAND_DAMPING;
+    g.vy *= SAND_DAMPING;
+    g.x += g.vx;
+    g.y += g.vy;
+    if (Math.abs(g.vx) < 0.001) g.vx = 0;
+    if (Math.abs(g.vy) < 0.001) g.vy = 0;
+  }
+}
 
 // ===== NODE FACTORY =====
 function makeNode(obj, x, y, depth, parentNode) {
@@ -548,6 +652,54 @@ function drawLines() {
     ctx.lineWidth = Math.max(0.5, (1.5 - n.depth * 0.15) * zoom);
     ctx.stroke();
   }
+}
+
+function drawTypeLines() {
+  // Draw dashed lines from type definition nodes to their visible instances
+  const typeNodes = nodes.filter(n => n.isType && !n.removing);
+  if (typeNodes.length === 0) return;
+
+  // Build a set of visible instance nodes keyed by typeId for fast lookup
+  const instancesByType = {};
+  for (const n of nodes) {
+    if (n.removing || n.isNs || n.isType || !n.obj.typeId) continue;
+    const tid = n.obj.typeId;
+    if (!instancesByType[tid]) instancesByType[tid] = [];
+    instancesByType[tid].push(n);
+  }
+
+  ctx.save();
+  ctx.setLineDash([4 * zoom, 4 * zoom]);
+
+  for (const tn of typeNodes) {
+    // Strip 'type:' prefix to match instance typeId
+    const realTypeId = (tn.obj.elementId || '').replace('type:', '');
+    const instances = instancesByType[realTypeId];
+    if (!instances || instances.length === 0) continue;
+
+    const [tx, ty] = w2s(tn.x, tn.y);
+
+    for (const inst of instances) {
+      const [ix, iy] = w2s(inst.x, inst.y);
+
+      // Cull off-screen lines
+      if (tx < -100 && ix < -100) continue;
+      if (tx > W + 100 && ix > W + 100) continue;
+      if (ty < -100 && iy < -100) continue;
+      if (ty > H + 100 && iy > H + 100) continue;
+
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      const mx = (tx + ix) / 2 + (ty - iy) * 0.05;
+      const my = (ty + iy) / 2 + (ix - tx) * 0.05;
+      ctx.quadraticCurveTo(mx, my, ix, iy);
+      ctx.strokeStyle = tn.color + '22';
+      ctx.lineWidth = Math.max(0.5, 0.8 * zoom);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
 }
 
 function drawNode(n) {
@@ -1047,6 +1199,7 @@ document.getElementById('expandAll').addEventListener('click', () => {
 function frame() {
   time += 0.016;
   physics();
+  sandPhysics();
 
   ctx.clearRect(0, 0, W, H);
 
@@ -1063,6 +1216,7 @@ function frame() {
 
   drawSand();
   drawLines();
+  drawTypeLines();
 
   // Sort: draw drag node last
   const sorted = [...nodes].sort((a, b) => {

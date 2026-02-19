@@ -130,7 +130,13 @@ const SAND_FRICTION = 0.85;
 const SPRING_K = 0.065;
 const SPRING_DAMP = 0.7;
 const COLLISION_STRENGTH = 0.3;
-const SAND_COUNT = 5000;
+const SAND_COUNT = 60000;
+const SAND_PUSH_RADIUS = 2.5;    // multiplier on node radius for sand displacement range
+const SAND_PUSH_STRENGTH = 0.4;  // how hard nodes push sand
+const SAND_DAMPING = 0.94;       // sand velocity friction per frame
+const SAND_GRAIN_REPEL = 0.02;   // gentle grain-grain push (only nearby)
+const SAND_SETTLE_SPEED = 0.003; // how fast grains drift back to home
+const SAND_CELL = 60;            // spatial hash cell size
 
 // ===== CANVAS =====
 let W, H, dpr;
@@ -217,15 +223,112 @@ function shapeFor(obj) {
 function initSand() {
   sandGrains = [];
   for (let i = 0; i < SAND_COUNT; i++) {
+    const dense = i < SAND_COUNT * 0.8;
+    const hx = dense ? (Math.random() - 0.5) * 3000 : (Math.random() - 0.5) * 8000;
+    const hy = dense ? (Math.random() - 0.5) * 2250 : (Math.random() - 0.5) * 6000;
     sandGrains.push({
-      x: (Math.random() - 0.5) * 8000,
-      y: (Math.random() - 0.5) * 6000,
+      x: hx, y: hy,
+      hx: hx, hy: hy,
+      vx: 0, vy: 0,
       r: Math.random() * 1.1 + 0.3,
-      a: Math.random() * 0.045 + 0.015,
+      a: Math.random() * 0.15 + 0.08,
     });
   }
 }
 initSand();
+
+// ===== SAND SPATIAL HASH =====
+let sandHash = {};
+function sandHashKey(x, y) {
+  return ((x / SAND_CELL) | 0) + ',' + ((y / SAND_CELL) | 0);
+}
+function buildSandHash() {
+  sandHash = {};
+  for (let i = 0; i < sandGrains.length; i++) {
+    const g = sandGrains[i];
+    const k = sandHashKey(g.x, g.y);
+    if (!sandHash[k]) sandHash[k] = [];
+    sandHash[k].push(i);
+  }
+}
+function sandNear(wx, wy, range) {
+  const result = [];
+  const cx0 = ((wx - range) / SAND_CELL) | 0;
+  const cx1 = ((wx + range) / SAND_CELL) | 0;
+  const cy0 = ((wy - range) / SAND_CELL) | 0;
+  const cy1 = ((wy + range) / SAND_CELL) | 0;
+  for (let cx = cx0; cx <= cx1; cx++) {
+    for (let cy = cy0; cy <= cy1; cy++) {
+      const bucket = sandHash[cx + ',' + cy];
+      if (bucket) for (const idx of bucket) result.push(idx);
+    }
+  }
+  return result;
+}
+
+// ===== SAND PHYSICS =====
+function sandPhysics() {
+  buildSandHash();
+
+  // Node -> sand interaction
+  for (const n of nodes) {
+    if (n.removing) continue;
+    const speed = Math.sqrt(n.vx * n.vx + n.vy * n.vy);
+    const pushR = n.radius * SAND_PUSH_RADIUS;
+    const nearby = sandNear(n.x, n.y, pushR);
+    for (const idx of nearby) {
+      const g = sandGrains[idx];
+      const dx = g.x - n.x;
+      const dy = g.y - n.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+      if (dist < pushR) {
+        const overlap = 1 - dist / pushR;
+        const force = overlap * overlap * SAND_PUSH_STRENGTH;
+        const nx = dx / dist;
+        const ny = dy / dist;
+        g.vx += nx * force * (1 + speed * 0.5);
+        g.vy += ny * force * (1 + speed * 0.5);
+        g.vx += n.vx * overlap * 0.15;
+        g.vy += n.vy * overlap * 0.15;
+      }
+    }
+  }
+
+  // Grain-grain soft repulsion (sampled for performance)
+  const step = Math.max(1, (sandGrains.length / 800) | 0);
+  for (let i = 0; i < sandGrains.length; i += step) {
+    const g = sandGrains[i];
+    const nearby = sandNear(g.x, g.y, 4);
+    for (const jIdx of nearby) {
+      if (jIdx === i) continue;
+      const h = sandGrains[jIdx];
+      const dx = h.x - g.x;
+      const dy = h.y - g.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+      if (dist < 3) {
+        const push = (3 - dist) * SAND_GRAIN_REPEL;
+        const nx = dx / dist;
+        const ny = dy / dist;
+        g.vx -= nx * push;
+        g.vy -= ny * push;
+        h.vx += nx * push;
+        h.vy += ny * push;
+      }
+    }
+  }
+
+  // Update grain positions
+  for (const g of sandGrains) {
+    g.vx += (g.hx - g.x) * SAND_SETTLE_SPEED;
+    g.vy += (g.hy - g.y) * SAND_SETTLE_SPEED;
+    g.vx *= SAND_DAMPING;
+    g.vy *= SAND_DAMPING;
+    g.x += g.vx;
+    g.y += g.vy;
+    if (Math.abs(g.vx) < 0.001) g.vx = 0;
+    if (Math.abs(g.vy) < 0.001) g.vy = 0;
+  }
+}
 
 // ===== NODE FACTORY =====
 function makeNode(obj, x, y, depth, parentNode) {
@@ -1047,6 +1150,7 @@ document.getElementById('expandAll').addEventListener('click', () => {
 function frame() {
   time += 0.016;
   physics();
+  sandPhysics();
 
   ctx.clearRect(0, 0, W, H);
 
