@@ -96,6 +96,16 @@ export async function createServer(
     });
   }
 
+  fastify.get('/status', async (request) => {
+    const ctx = request.apiContext;
+    return {
+      mqtt: {
+        brokerUrl: ctx.mqttClient?.getBrokerUrl() ?? null,
+        state: ctx.mqttClient?.getState() ?? 'unavailable',
+      },
+    };
+  });
+
   await fastify.register(registerNamespacesRoutes, { prefix: '' });
   await fastify.register(registerObjectTypesRoutes, { prefix: '' });
   await fastify.register(registerObjectsRoutes, { prefix: '' });

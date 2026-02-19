@@ -1,5 +1,5 @@
 # ---- Build stage ----
-FROM node:22-alpine AS build
+FROM node:22-slim AS build
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
@@ -10,7 +10,7 @@ COPY src/ ./src/
 RUN npm run build
 
 # ---- Runtime stage ----
-FROM node:22-alpine
+FROM node:22-slim
 WORKDIR /app
 
 COPY package.json package-lock.json* ./

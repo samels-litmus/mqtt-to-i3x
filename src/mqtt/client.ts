@@ -22,6 +22,10 @@ export class MqttClientWrapper {
     this.config = config;
   }
 
+  getBrokerUrl(): string {
+    return this.config.brokerUrl;
+  }
+
   async connect(): Promise<void> {
     if (this.client) {
       return;
